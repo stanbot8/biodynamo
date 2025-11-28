@@ -111,14 +111,20 @@ function CleanBuild {
 
 
 #Load Modules
+echo "Loading Modules:"
 module use /share/apps/eb/modules/all/
-module load Tkinter/3.10.4-GCCcore-11.3.0
-module load git/2.36.0-GCCcore-11.3.0-nodocs
+module load Tkinter/3.9.6-GCCcore-11.2.0
+module load git/2.33.1-GCCcore-11.2.0-nodocs
 module load Bazel/5.1.1-GCCcore-11.3.0
-module load OpenBLAS/0.3.20-GCC-11.3.0
-module load CMake/3.23.1-GCCcore-11.3.0
-module load OpenMPI/4.1.4-GCC-11.3.0
-module load Doxygen/1.9.4-GCCcore-11.3.0
+module load OpenBLAS/0.3.18-GCC-11.2.0
+module load CMake/3.22.1-GCCcore-11.2.0
+module load OpenMPI/4.1.1-GCC-11.2.0
+module load Doxygen/1.9.1-GCCcore-11.2.0
+#module load Mesa/22.0.3-GCCcore-11.3.0
+#module load glew/2.2.0-GCCcore-11.3.0-egl
+#module load libglvnd/1.4.0-GCCcore-11.3.0
+module load libGLU/9.0.2-GCCcore-11.2.0
+module load LLVM/12.0.1-GCCcore-11.2.0
 module unload Python
 
 BDM_PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
