@@ -13,6 +13,46 @@
 #
 # -----------------------------------------------------------------------------
 
+function DetectOs {
+  # detect operating system
+  if [ `uname` = "Linux" ]; then
+    # linux
+    DISTRIBUTOR=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
+    RELEASE=$(grep -oP '(?<=^VERSION_ID=).+' /etc/os-release | tr -d '"')
+    OS="${DISTRIBUTOR}-${RELEASE}"
+    echo $OS | awk '{print tolower($0)}'
+  elif [ `uname` = "Darwin" ]; then
+    # macOS
+    echo osx
+  else
+    echo "ERROR: Operating system `uname` is not supported."
+    exit 1
+  fi
+}
+
+function DetectOs2 {
+  # detect operating system
+  if [ `uname` = "Linux" ]; then
+    # linux
+     PROCVERSION=$(cat /proc/version)
+     if echo "$PROCVERSION" | grep -Eiq 'Red Hat' ; then
+	echo rhel;
+     elif echo "$PROCVERSION" | grep -Eiq 'debian|buntu|mint|eepin' ; then
+     	echo debian;
+     elif echo "$PROCVERSION" | grep -Eiq 'SUSE|suse' ; then
+     	echo suse;
+     else
+     	echo other_distro;
+     fi
+  elif [ `uname` = "Darwin" ]; then
+    # macOS
+    echo osx
+  else
+    echo "ERROR: Operating system `uname` is not supported."
+    exit 1
+  fi
+}
+
 if [[ $# -ne 1 ]]; then
   echo "ERROR: Wrong number of arguments.
 Description:
