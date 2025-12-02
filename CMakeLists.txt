@@ -366,8 +366,6 @@ if(paraview)
     # Check the first time if ParaView exists in the system.
     find_package(ParaView ${CMAKE_BDM_PVVERSION} CONFIG COMPONENTS Catalyst PythonCatalyst VTKExtensionsIOCore
                  PATHS ${CMAKE_THIRD_PARTY_DIR}/paraview ENV{ParaView_DIR})
-                 include(${VTK_USE_FILE})
-
     if(ParaView_FOUND)
         # Check if found ParaView is BDM installed (matchres > -1)
         string(FIND ${ParaView_PREFIX_PATH} ${CMAKE_THIRD_PARTY_DIR} matchres)
@@ -423,7 +421,6 @@ if(paraview)
       endif()
       find_package(ParaView ${CMAKE_BDM_PVVERSION} CONFIG COMPONENTS Catalyst PythonCatalyst VTKExtensionsIOCore
                    PATHS ${CMAKE_THIRD_PARTY_DIR}/paraview)
-                   include(${VTK_USE_FILE})
     endif()
 
     include_directories(${ParaView_PREFIX_PATH}/include/paraview-${CMAKE_BDM_PVVERSION})
