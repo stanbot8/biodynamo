@@ -150,6 +150,29 @@ pyenv shell 3.9.1
 set -e
 
 BUILD_DIR=$BDM_PROJECT_DIR/build
+
+cd $BDM_PROJECT_DIR_2/util/build-third-party/
+./build-gcc_new.sh $BDM_PROJECT_DIR_2
+cd $BUILD_DIR
+if [ -d $BDM_PROJECT_DIR_2/third_party/gcc ]; then
+
+        echo "******************************************************************"
+        echo "Found suitable gcc version installed in the
+third party directory.
+Using that."
+        echo "******************************************************************"
+        export CC=$BDM_PROJECT_DIR_2/third_party/gcc/bin/gcc
+        export CXX=$BDM_PROJECT_DIR_2/third_party/gcc/bin/g++
+        export FC=$BDM_PROJECT_DIR_2/third_party/gcc/bin/gfortran
+        export OMPI_CC=$BDM_PROJECT_DIR_2/third_party/gcc/bin/gcc
+        export OMPI_CXX=$BDM_PROJECT_DIR_2/third_party/gcc/bin/g++
+        export OMPI_FC=$BDM_PROJECT_DIR_2/third_party/gcc/bin/gfortran
+	export QMAKE_CC=$BDM_PROJECT_DIR_2/third_party/gcc/bin/gcc
+        export QMAKE_CXX=$BDM_PROJECT_DIR_2/third_party/gcc/bin/g++
+        export LINK=$BDM_PROJECT_DIR_2/third_party/gcc/bin/g++
+
+fi
+
 CleanBuild $BUILD_DIR
 
 # print final steps
