@@ -151,7 +151,7 @@ set -e
 
 BUILD_DIR=$BDM_PROJECT_DIR/build
 
-cd $BDM_PROJECT_DIR_2/util/build-third-party/
+cd $BDM_PROJECT_DIR/util/build-third-party/
 ./build-gcc_new.sh $BDM_PROJECT_DIR_2
 cd $BUILD_DIR
 if [ -d $BDM_PROJECT_DIR_2/third_party/gcc ]; then
