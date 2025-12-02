@@ -151,7 +151,7 @@ mkdir obj
 cd obj
 echo $PYTH
 cmake $FEATURES -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release  -DPYTHON_EXECUTABLE="$PYTH" -DCMAKE_INSTALL_PREFIX=$ROOT_INSTALL_DIR ..
-cmake --build . --parallel $(CPUCount) --target install
+cmake --build . --parallel 16 --target install
 #source $ROOT_INSTALL_DIR/bin/thisroot.sh
 return
 }

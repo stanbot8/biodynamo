@@ -127,6 +127,9 @@ module load Doxygen/1.9.1-GCCcore-11.2.0
 module load freeglut/3.2.1-GCCcore-11.2.0
 module load libGLU/9.0.2-GCCcore-11.2.0
 module load LLVM/12.0.1-GCCcore-11.2.0
+module load GMP/6.2.1-GCCcore-11.2.0
+module load MPFR/4.1.0-GCCcore-11.2.0
+module load MPC/1.2.1-GCCcore-11.2.0
 module unload Python
 
 BDM_PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
