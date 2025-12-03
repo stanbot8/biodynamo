@@ -553,6 +553,25 @@ _source_thisbdm()
     os_id=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"') || return 1
     if [ "$os_id" = 'centos' ]; then
         export MESA_GL_VERSION_OVERRIDE=3.3
+        module use /share/apps/eb/modules/all/
+        module load Tkinter/3.11.3-GCCcore-12.3.0
+        module load git/2.41.0-GCCcore-12.3.0-nodocs
+        module load Bazel/6.3.1-GCCcore-12.3.0
+        module load OpenBLAS/0.3.23-GCC-12.3.0
+        module load CMake/3.26.3-GCCcore-12.3.0
+        module load OpenMPI/4.1.5-GCC-12.3.0
+        module load Doxygen/1.9.7-GCCcore-12.3.0
+        #module load Mesa/22.0.3-GCCcore-11.3.0
+        #module load glew/2.2.0-GCCcore-11.3.0-egl
+        #module load libglvnd/1.4.0-GCCcore-11.3.0
+        module load freeglut/3.4.0-GCCcore-12.3.0
+        module load libGLU/9.0.3-GCCcore-12.3.0
+        module load LLVM/16.0.6-GCCcore-12.3.0
+        module load GMP/6.2.1-GCCcore-12.3.0
+        module load MPFR/4.2.0-GCCcore-12.3.0
+        module load MPC/1.3.1-GCCcore-12.3.0
+        module unload Python
+
 
     fi
   fi
