@@ -114,22 +114,22 @@ function CleanBuild {
 #Load Modules
 echo "Loading Modules:"
 module use /share/apps/eb/modules/all/
-module load Tkinter/3.9.6-GCCcore-11.2.0
-module load git/2.33.1-GCCcore-11.2.0-nodocs
-module load Bazel/4.2.2-GCCcore-11.2.0
-module load OpenBLAS/0.3.18-GCC-11.2.0
-module load CMake/3.22.1-GCCcore-11.2.0
-module load OpenMPI/4.1.1-GCC-11.2.0
-module load Doxygen/1.9.1-GCCcore-11.2.0
+module load Tkinter/3.11.3-GCCcore-12.3.0
+module load git/2.41.0-GCCcore-12.3.0-nodocs
+module load Bazel/6.3.1-GCCcore-12.3.0
+module load OpenBLAS/0.3.23-GCC-12.3.0
+module load CMake/3.26.3-GCCcore-12.3.0
+module load OpenMPI/4.1.5-GCC-12.3.0
+module load Doxygen/1.9.7-GCCcore-12.3.0
 #module load Mesa/22.0.3-GCCcore-11.3.0
 #module load glew/2.2.0-GCCcore-11.3.0-egl
 #module load libglvnd/1.4.0-GCCcore-11.3.0
-module load freeglut/3.2.1-GCCcore-11.2.0
-module load libGLU/9.0.2-GCCcore-11.2.0
-module load LLVM/12.0.1-GCCcore-11.2.0
-module load GMP/6.2.1-GCCcore-11.2.0
-module load MPFR/4.1.0-GCCcore-11.2.0
-module load MPC/1.2.1-GCCcore-11.2.0
+module load freeglut/3.4.0-GCCcore-12.3.0
+module load libGLU/9.0.3-GCCcore-12.3.0
+module load LLVM/16.0.6-GCCcore-12.3.0
+module load GMP/6.2.1-GCCcore-12.3.0
+module load MPFR/4.2.0-GCCcore-12.3.0
+module load MPC/1.3.1-GCCcore-12.3.0
 module unload Python
 
 BDM_PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
