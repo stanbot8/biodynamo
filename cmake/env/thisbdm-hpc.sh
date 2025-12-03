@@ -555,6 +555,7 @@ _source_thisbdm()
         export MESA_GL_VERSION_OVERRIDE=3.3
         module use /share/apps/eb/modules/all/
         module load Tkinter/3.11.3-GCCcore-12.3.0
+        module load ROOT/6.30.06-foss-2023a
         module load git/2.41.0-GCCcore-12.3.0-nodocs
         module load Bazel/6.3.1-GCCcore-12.3.0
         module load OpenBLAS/0.3.23-GCC-12.3.0

@@ -35,13 +35,13 @@ function EchoFinishInstallation {
     exit 1
   fi
 
-  local addToConfigStr="   ${BDM_ECHO_UNDERLINE}echo \"alias thisbdm='source $1/bin/thisbdm"
+  local addToConfigStr="   ${BDM_ECHO_UNDERLINE}echo \"alias thisbdm='source $1/bin/thisbdm-hpc"
   local setQuietEnvVarStr
 
   EchoInfo "Before running BioDynaMo execute:"
   case $SHELL in
     *bash | *zsh)
-      EchoNewStep "   ${BDM_ECHO_UNDERLINE}source $1/bin/thisbdm.sh"
+      EchoNewStep "   ${BDM_ECHO_UNDERLINE}source $1/bin/thisbdm-hpc.sh"
 
       case $SHELL in
         *bash) addToConfigStr="$addToConfigStr.sh'\" >> $(BashrcFile)" ;;
@@ -67,7 +67,7 @@ function EchoFinishInstallation {
   EchoInfo "For added convenience, run (in your terminal):"
   EchoNewStep "$addToConfigStr"
   EchoInfo "to be able to just type 'thisbdm', instead of"
-  EchoInfo "'source .../bin/thisbdm.[fi]sh'"
+  EchoInfo "'source .../bin/thisbdm-hpc.[fi]sh'"
   echo
   EchoInfo "${setQuietEnvVarStr} will disable the prompt indicator,"
   EchoInfo "and silence all non-critical output."
@@ -115,6 +115,7 @@ function CleanBuild {
 echo "Loading Modules:"
 module use /share/apps/eb/modules/all/
 module load Tkinter/3.11.3-GCCcore-12.3.0
+module load ROOT/6.30.06-foss-2023a
 module load git/2.41.0-GCCcore-12.3.0-nodocs
 module load Bazel/6.3.1-GCCcore-12.3.0
 module load OpenBLAS/0.3.23-GCC-12.3.0
@@ -152,7 +153,7 @@ pyenv install 3.9.1
 pyenv shell 3.9.1
 set -e
 
-BUILD_DIR=$BDM_PROJECT_DIR/build
+BUILD_DIR=$BDM_PROJECT_DIR/build/
 
 #cd $BDM_PROJECT_DIR/util/build-third-party/
 #./build-gcc_new.sh $BDM_PROJECT_DIR
@@ -177,6 +178,8 @@ BUILD_DIR=$BDM_PROJECT_DIR/build
 #fi
 
 CleanBuild $BUILD_DIR
+
+cp $BDM_PROJECT_DIR/cmake/env/thisbdm-hpc.sh $1/bin/thisbdm-hpc.sh
 
 # print final steps
 echo
