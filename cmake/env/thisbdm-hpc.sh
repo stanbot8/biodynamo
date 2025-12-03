@@ -571,7 +571,12 @@ _source_thisbdm()
         module load MPFR/4.2.0-GCCcore-12.3.0
         module load MPC/1.3.1-GCCcore-12.3.0
         module unload Python
-
+        rm -rf $BDMSYS/openblas-fake-lib
+        mkdir $BDMSYS/openblas-fake-lib
+        ln -s $EBROOTOPENBLAS/lib/libopenblas.so $BDMSYS/openblas-fake-lib/libblas.so
+        ln -s $EBROOTOPENBLAS/lib/libopenblas.so $BDMSYS/openblas-fake-lib/liblapack.so
+        export LIBRARY_PATH=$BDMSYS/openblas-fake-lib:$LIBRARY_PATH
+        export LD_LIBRARY_PATH=$BDMSYS/openblas-fake-lib:$LD_LIBRARY_PATH
 
     fi
   fi
