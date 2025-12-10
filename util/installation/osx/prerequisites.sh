@@ -49,6 +49,7 @@ if [ ! "xcode-select -p" ]; then
   echo "https://biodynamo.org/docs/userguide/prerequisites/#macos"
   exit 1
 fi 
+sudo xcode-select -r
 
 # Install and upgrade required packages
 brew install \
