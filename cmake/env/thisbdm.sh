@@ -253,6 +253,7 @@ _source_thisbdm()
   local bdm_pv_version='5.9'
   if [ "$(uname)" = 'Darwin' ]; then
     bdm_pv_version='5.10'
+    export PATH=${BDMSYS}/third_party/paraview/bin:$PATH
   fi
 
   # Clear the env from previously set ParaView and Qt paths.
