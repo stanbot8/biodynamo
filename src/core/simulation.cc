@@ -14,7 +14,7 @@
 
 #include "core/simulation.h"
 
-#include <cpptoml/cpptoml.h>
+#include <tomlplusplus/toml.hpp>
 #include <omp.h>
 #include <algorithm>
 #include <cmath>
@@ -507,7 +507,7 @@ void Simulation::LoadConfigFiles(const std::vector<std::string>& ctor_configs,
   if (configs.size()) {
     for (auto& config : configs) {
       if (EndsWith(config, ".toml")) {
-        auto toml = cpptoml::parse_file(config);
+        auto toml = toml::parse_file(config);
         param_->AssignFromConfig(toml);
       } else if (EndsWith(config, ".json")) {
         std::ifstream ifs(config);
