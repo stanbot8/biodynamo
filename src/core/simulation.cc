@@ -14,7 +14,6 @@
 
 #include "core/simulation.h"
 
-#include <cpptoml/cpptoml.h>
 #include <omp.h>
 #include <algorithm>
 #include <cmath>
@@ -25,6 +24,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <tomlplusplus/toml.hpp>
 #include <utility>
 #include <vector>
 
@@ -71,18 +71,15 @@ Simulation::Simulation(TRootIOCtor* p) {}
 
 Simulation::Simulation(int argc, const char** argv,
                        const std::vector<std::string>& config_files)
-    : Simulation(
-          argc, argv, [](auto* param) {}, config_files) {}
+    : Simulation(argc, argv, [](auto* param) {}, config_files) {}
 
 Simulation::Simulation(const std::string& simulation_name,
                        const std::vector<std::string>& config_files)
-    : Simulation(
-          simulation_name, [](auto* param) {}, config_files) {}
+    : Simulation(simulation_name, [](auto* param) {}, config_files) {}
 
 Simulation::Simulation(CommandLineOptions* clo,
                        const std::vector<std::string>& config_files) {
-  Initialize(
-      clo, [](auto* param) {}, config_files);
+  Initialize(clo, [](auto* param) {}, config_files);
 }
 
 Simulation::Simulation(CommandLineOptions* clo,
@@ -507,7 +504,7 @@ void Simulation::LoadConfigFiles(const std::vector<std::string>& ctor_configs,
   if (configs.size()) {
     for (auto& config : configs) {
       if (EndsWith(config, ".toml")) {
-        auto toml = cpptoml::parse_file(config);
+        auto toml = toml::parse_file(config);
         param_->AssignFromConfig(toml);
       } else if (EndsWith(config, ".json")) {
         std::ifstream ifs(config);
