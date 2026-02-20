@@ -195,7 +195,7 @@ class BDMGlyphFilter::vtkInternals {
 
         while ((this->NextPointId < this->PointIds.size()) &&
                (this->PointIds[this->NextPointId] < ptId)) {
-          // this is need since it is possible (due to ghost cells or other
+          // this is needed since it is possible (due to ghost cells or other
           // masking employed by vtkGlyph3D) that certain ptIds are never tested
           // since they are rejected earlier on.
           this->NextPointId++;

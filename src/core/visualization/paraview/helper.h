@@ -29,7 +29,7 @@ namespace bdm {
 
 static constexpr char const* kSimulationInfoJson = "simulation_info.json";
 
-/// If the user selects the visualiation option export, we need to pass the
+/// If the user selects the visualization option export, we need to pass the
 /// information on the C++ side to a python script which generates the
 /// ParaView state file. The Json file is generated inside this function
 /// \see GenerateParaviewState
