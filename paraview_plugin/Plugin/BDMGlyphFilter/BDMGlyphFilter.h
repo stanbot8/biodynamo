@@ -16,21 +16,21 @@
 
 /**
  * @class   BDMGlyphFilter
- * @brief   extended API for vtkGlyph3DP for better control
+ * @brief   extended API for vtkGlyph3D for better control
  * over glyph placement.
  *
  *
- * BDMGlyphFilter extends vtkGlyph3DP for adding control over which points
+ * BDMGlyphFilter extends vtkGlyph3D for adding control over which points
  * are
  * glyphed using \c GlyphMode. Three modes are now provided:
  * \li ALL_POINTS: all points in the input dataset are glyphed. This same as
  * using
- * vtkGlyph3DP directly.
+ * vtkGlyph3D directly.
  *
  * \li EVERY_NTH_POINT: every n-th point in the input dataset when iterated
  * through the input points sequentially is glyphed. For composite datasets,
  * the counter resets every on block. In parallel, independent counter is used
- * on each rank. Use \c Stride to control now may points to skip.
+ * on each rank. Use \c Stride to control how many points to skip.
  *
  * \li SPATIALLY_UNIFORM_DISTRIBUTION: points close to a randomly sampled
  * spatial
@@ -40,7 +40,7 @@
  * MaximumNumberOfSamplePoints
  * can be used to limit the number of sample points used for random sampling.
  * This
- * doesn't not equal the number of points actually glyphed, since that depends
+ * does not equal the number of points actually glyphed, since that depends
  * on
  * several factors. In parallel, this filter ensures that spatial bounds are
  * collected

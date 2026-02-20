@@ -26,7 +26,7 @@ class MyCell : public Cell {
  public:
   MyCell() = default;
 
-  int dummmy_;
+  int dummy_;
 };
 
 class MyNeuron : public Cell {
@@ -35,7 +35,7 @@ class MyNeuron : public Cell {
  public:
   MyNeuron() = default;
 
-  int dummmy_;
+  int dummy_;
 };
 
 }  // namespace paraview_adaptor_test_internal

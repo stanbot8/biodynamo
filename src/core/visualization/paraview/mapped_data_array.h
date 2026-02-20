@@ -46,7 +46,7 @@ struct GetDataMemberForVis {
   GetDataMemberForVis() { temp_values_.resize(256); }
 
   void Update() {
-    // We assume that number of threads won't real_t within one iteration
+    // We assume that number of threads won't change within one iteration
     temp_values_.resize(
         2 * std::max<unsigned long long>(
                 ThreadInfo::GetInstance()->GetMaxUniversalThreadId(), 256ULL));
@@ -208,7 +208,7 @@ class MappedDataArray : public vtkMappedDataArray<TScalar>,
 
   Param::MappedDataArrayMode mode_;
   /// Comparison value to determine if cached data is valid
-  /// This value is increemented at each simulation iteration.
+  /// This value is incremented at each simulation iteration.
   mutable uint64_t match_value_ = 0;
   /// Stores match_value at the time the data element was cached.
   /// Data is valid for one iteration, i.e. as long as match_value_ doesn't

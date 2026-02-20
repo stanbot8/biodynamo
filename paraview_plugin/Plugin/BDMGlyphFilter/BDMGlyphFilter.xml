@@ -11,7 +11,7 @@ dataset. The glyphs can be oriented and scaled by the input
 point-centered scalars and vectors. The Glyph filter operates on any
 type of data set. Its output is polygonal
 
-To use this filter, you first select the arrays to use for as the
+To use this filter, you first select the arrays to use as the
 **Scalars** and **Vectors**, if any.  To orient the glyphs using the
 selected **Vectors**, use **Orient** property.  To scale the glyphs using
 the selected **Scalars** or **Vectors**, use the **Scale Mode** property.
@@ -19,7 +19,7 @@ the selected **Scalars** or **Vectors**, use the **Scale Mode** property.
 The **Glyph Mode** property controls which points in the input dataset
 are selected for glyphing (since in most cases, glyphing all points in
 the input dataset can be both performance impeding as well as visually
-cluttred.
+cluttered.
       </Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
