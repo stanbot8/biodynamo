@@ -12,36 +12,12 @@
 //
 // -----------------------------------------------------------------------------
 
-#ifndef CORE_UTIL_CPPTOML_H_
-#define CORE_UTIL_CPPTOML_H_
+// Deprecated: cpptoml has been replaced by tomlplusplus.
+// Update your includes from "core/util/cpptoml.h" to "core/util/toml_config.h"
+// and use TomlConfig (from param_group.h) instead of cpptoml::table.
+#if !defined(__ROOTCLING__) && !defined(__CLING__)
+#pragma message( \
+    "cpptoml.h is deprecated. Use #include \"core/util/toml_config.h\" instead.")
+#endif
 
-#define BDM_ASSIGN_CONFIG_VALUE(variable, config_key)                        \
-  {                                                                          \
-    if (config->contains_qualified(config_key)) {                            \
-      auto value = config->get_qualified_as<decltype(variable)>(config_key); \
-      if (value) {                                                           \
-        variable = *value;                                                   \
-      }                                                                      \
-    }                                                                        \
-  }
-
-#define BDM_ASSIGN_CONFIG_DOUBLE3_VALUE(variable, config_key)           \
-  {                                                                     \
-    if (config->contains_qualified(config_key)) {                       \
-      auto value = config->get_array_of<real_t>(config_key);            \
-      if (value) {                                                      \
-        auto vector = *value;                                           \
-        if (vector.size() == variable.size()) {                         \
-          for (uint64_t i = 0; i < vector.size(); i++) {                \
-            variable[i] = vector[i];                                    \
-          }                                                             \
-        } else {                                                        \
-          Log::Fatal("cpptoml parameter parsing",                       \
-                     "An error occurred during parameter parsing of (", \
-                     config_key, ". Array dimensions do not match");    \
-        }                                                               \
-      }                                                                 \
-    }                                                                   \
-  }
-
-#endif  // CORE_UTIL_CPPTOML_H_
+#include "core/util/toml_config.h"

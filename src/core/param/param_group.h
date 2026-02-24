@@ -17,9 +17,17 @@
 
 #include <memory>
 #include "core/util/root.h"
-#include "cpptoml/cpptoml.h"
+#include "tomlplusplus/toml.hpp"
 
 namespace bdm {
+
+/// Typedef for TOML config table, insulating downstream code from the
+/// concrete TOML library in use.
+/// Migration note: cpptoml has been replaced by tomlplusplus.
+/// Update downstream AssignFromConfig overrides:
+///   void AssignFromConfig(const cpptoml::table&)  // old -- will not compile
+///   void AssignFromConfig(const TomlConfig&)       // new
+using TomlConfig = toml::table;
 
 struct Param;
 
@@ -52,7 +60,7 @@ struct ParamGroup {
  protected:
   /// Assign values from a toml config file.\n
   /// Can be omitted if toml file support is not required.
-  virtual void AssignFromConfig(const std::shared_ptr<cpptoml::table>&);
+  virtual void AssignFromConfig(const TomlConfig&);
 
  private:
   friend struct Param;

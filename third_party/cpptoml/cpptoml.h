@@ -7,6 +7,10 @@
 #ifndef _CPPTOML_H_
 #define _CPPTOML_H_
 
+#pragma message( \
+    "cpptoml is deprecated and will be removed in a future release. " \
+    "BioDynaMo now uses tomlplusplus for TOML parsing.")
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
