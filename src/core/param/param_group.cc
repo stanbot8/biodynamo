@@ -28,6 +28,6 @@ ParamGroupUid ParamGroupUidGenerator::NewUid() { return counter_++; }
 
 ParamGroup::~ParamGroup() = default;
 
-void ParamGroup::AssignFromConfig(const std::shared_ptr<cpptoml::table>&) {}
+void ParamGroup::AssignFromConfig(const TomlConfig&) {}
 
 }  // namespace bdm

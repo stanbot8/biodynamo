@@ -24,7 +24,6 @@
 #include "core/param/param_group.h"
 #include "core/real_t.h"
 #include "core/util/root.h"
-#include "cpptoml/cpptoml.h"
 
 namespace bdm {
 namespace neuroscience {
@@ -107,7 +106,7 @@ struct Param : public ParamGroup {
 
  protected:
   /// Assign values from config file to variables
-  void AssignFromConfig(const std::shared_ptr<cpptoml::table>&) override;
+  void AssignFromConfig(const TomlConfig&) override;
 };
 
 }  // namespace neuroscience
