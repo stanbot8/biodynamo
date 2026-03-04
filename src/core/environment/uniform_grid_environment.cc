@@ -123,12 +123,12 @@ void UniformGridEnvironment::UpdateImplementation() {
       CalcSimDimensionsAndLargestAgent(&tmp_dim);
       RoundOffGridDimensions(tmp_dim);
     } else {
-      grid_dimensions_[0] = static_cast<int>(floor(param->min_bound));
-      grid_dimensions_[2] = static_cast<int>(floor(param->min_bound));
-      grid_dimensions_[4] = static_cast<int>(floor(param->min_bound));
-      grid_dimensions_[1] = static_cast<int>(ceil(param->max_bound));
-      grid_dimensions_[3] = static_cast<int>(ceil(param->max_bound));
-      grid_dimensions_[5] = static_cast<int>(ceil(param->max_bound));
+      for (int i = 0; i < 3; i++) {
+        grid_dimensions_[2 * i] =
+            static_cast<int>(floor(param->GetMinBound(i)));
+        grid_dimensions_[2 * i + 1] =
+            static_cast<int>(ceil(param->GetMaxBound(i)));
+      }
     }
 
     // If the box_length_ is not set manually, we set it to the largest agent
@@ -218,13 +218,16 @@ void UniformGridEnvironment::UpdateImplementation() {
     bool uninitialized = boxes_.size() == 0;
     if (uninitialized && param->bound_space) {
       // Simulation has never had any agents
-      // Initialize grid dimensions with `Param::min_bound` and
-      // `Param::max_bound`
+      // Initialize grid dimensions with per-axis bounds (or scalar fallback)
       // This is required for the DiffusionGrid
-      int min = param->min_bound;
-      int max = param->max_bound;
-      grid_dimensions_ = {min, max, min, max, min, max};
-      threshold_dimensions_ = {min, max};
+      for (int i = 0; i < 3; i++) {
+        grid_dimensions_[2 * i] =
+            static_cast<int>(param->GetMinBound(i));
+        grid_dimensions_[2 * i + 1] =
+            static_cast<int>(param->GetMaxBound(i));
+      }
+      threshold_dimensions_ = {static_cast<int32_t>(param->min_bound),
+                                static_cast<int32_t>(param->max_bound)};
       has_grown_ = true;
     } else if (!uninitialized) {
       // all agents have been removed in the last iteration
