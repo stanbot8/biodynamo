@@ -13,14 +13,14 @@
 // -----------------------------------------------------------------------------
 
 #include "neuroscience/param.h"
-#include "core/util/cpptoml.h"
+#include "core/util/toml_config.h"
 
 namespace bdm {
 namespace neuroscience {
 
 const ParamGroupUid Param::kUid = ParamGroupUidGenerator::Get()->NewUid();
 
-void Param::AssignFromConfig(const std::shared_ptr<cpptoml::table>& config) {
+void Param::AssignFromConfig(const TomlConfig& config) {
   BDM_ASSIGN_CONFIG_VALUE(neurite_default_actual_length,
                           "neuroscience.neurite_default_actual_length");
   BDM_ASSIGN_CONFIG_VALUE(neurite_default_density,
