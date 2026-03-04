@@ -24,7 +24,7 @@
 namespace bdm {
 
 inline void ApplyBoundingBox(Agent* agent, Param::BoundSpaceMode mode,
-                             real_t lb, real_t rb) {
+                             const Param* param) {
   // Need to create a small distance from the positive edge of each dimension;
   // otherwise it will fall out of the boundary of the simulation space
   real_t eps = 1e-10;
@@ -32,6 +32,8 @@ inline void ApplyBoundingBox(Agent* agent, Param::BoundSpaceMode mode,
   if (mode == Param::BoundSpaceMode::kClosed) {
     bool updated = false;
     for (int i = 0; i < 3; i++) {
+      real_t lb = param->GetMinBound(i);
+      real_t rb = param->GetMaxBound(i);
       if (pos[i] < lb) {
         pos[i] = lb;
         updated = true;
@@ -44,24 +46,35 @@ inline void ApplyBoundingBox(Agent* agent, Param::BoundSpaceMode mode,
       agent->SetPosition(pos);
     }
   } else if (mode == Param::BoundSpaceMode::kTorus) {
-    auto length = rb - lb;
-    for (auto& el : pos) {
-      if (el < lb) {
-        auto d = std::abs(lb - el);
+    for (int i = 0; i < 3; i++) {
+      real_t lb = param->GetMinBound(i);
+      real_t rb = param->GetMaxBound(i);
+      auto length = rb - lb;
+      if (pos[i] < lb) {
+        auto d = std::abs(lb - pos[i]);
         if (d > length) {
           d = std::fmod(d, length);
         }
-        el = rb - d;
-      } else if (el > rb) {
-        auto d = std::abs(el - rb);
+        pos[i] = rb - d;
+      } else if (pos[i] > rb) {
+        auto d = std::abs(pos[i] - rb);
         if (d > length) {
           d = std::fmod(d, length);
         }
-        el = lb + d;
+        pos[i] = lb + d;
       }
     }
     agent->SetPosition(pos);
   }
+}
+
+/// Backward-compatible overload with scalar bounds.
+inline void ApplyBoundingBox(Agent* agent, Param::BoundSpaceMode mode,
+                             real_t lb, real_t rb) {
+  Param p;
+  p.min_bound = lb;
+  p.max_bound = rb;
+  ApplyBoundingBox(agent, mode, &p);
 }
 
 /// Keeps the agents contained within the bounds as defined in
@@ -72,8 +85,7 @@ struct BoundSpace : public AgentOperationImpl {
   void operator()(Agent* agent) override {
     auto* param = Simulation::GetActive()->GetParam();
     if (param->bound_space) {
-      ApplyBoundingBox(agent, param->bound_space, param->min_bound,
-                       param->max_bound);
+      ApplyBoundingBox(agent, param->bound_space, param);
     }
   }
 };
