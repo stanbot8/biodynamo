@@ -15,7 +15,9 @@
 #ifndef CORE_PARAM_PARAM_H_
 #define CORE_PARAM_PARAM_H_
 
+#include <array>
 #include <cinttypes>
+#include <cmath>
 #include <map>
 #include <memory>
 #include <set>
@@ -234,6 +236,43 @@ struct Param {
   ///     [simulation]
   ///     max_bound = 100
   real_t max_bound = 100;
+
+  /// Per-axis minimum bounds. When set (non-NaN), override `min_bound` for
+  /// agent containment and grid dimensions on each axis independently.\n
+  /// Default value: `{NaN, NaN, NaN}` (use scalar `min_bound`)\n
+  /// TOML config file:
+  ///
+  ///     [simulation]
+  ///     min_bound3 = [0, 0, -10]
+  std::array<real_t, 3> min_bound3 = {
+      std::numeric_limits<real_t>::quiet_NaN(),
+      std::numeric_limits<real_t>::quiet_NaN(),
+      std::numeric_limits<real_t>::quiet_NaN()};
+
+  /// Per-axis maximum bounds. When set (non-NaN), override `max_bound` for
+  /// agent containment and grid dimensions on each axis independently.\n
+  /// Default value: `{NaN, NaN, NaN}` (use scalar `max_bound`)\n
+  /// TOML config file:
+  ///
+  ///     [simulation]
+  ///     max_bound3 = [30, 30, 40]
+  std::array<real_t, 3> max_bound3 = {
+      std::numeric_limits<real_t>::quiet_NaN(),
+      std::numeric_limits<real_t>::quiet_NaN(),
+      std::numeric_limits<real_t>::quiet_NaN()};
+
+  /// Returns true if per-axis bounds have been explicitly set.
+  bool HasPerAxisBounds() const { return !std::isnan(min_bound3[0]); }
+
+  /// Get the effective minimum bound for a given axis.
+  real_t GetMinBound(int axis) const {
+    return HasPerAxisBounds() ? min_bound3[axis] : min_bound;
+  }
+
+  /// Get the effective maximum bound for a given axis.
+  real_t GetMaxBound(int axis) const {
+    return HasPerAxisBounds() ? max_bound3[axis] : max_bound;
+  }
 
   /// Define the boundary condition of the diffusion grid [open, closed,
   /// Neumann, Dirichlet, Periodic]\n

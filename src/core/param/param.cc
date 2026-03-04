@@ -15,6 +15,7 @@
 #include <TBufferJSON.h>
 #include <json.hpp>
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -226,6 +227,13 @@ void Param::AssignFromConfig(const TomlConfig& config) {
                           "simulation.max_displacement");
   BDM_ASSIGN_CONFIG_VALUE(min_bound, "simulation.min_bound");
   BDM_ASSIGN_CONFIG_VALUE(max_bound, "simulation.max_bound");
+  BDM_ASSIGN_CONFIG_DOUBLE3_VALUE(min_bound3, "simulation.min_bound3");
+  BDM_ASSIGN_CONFIG_DOUBLE3_VALUE(max_bound3, "simulation.max_bound3");
+  // When per-axis bounds are set, derive scalar bounds for backward compat
+  if (HasPerAxisBounds()) {
+    min_bound = std::min({min_bound3[0], min_bound3[1], min_bound3[2]});
+    max_bound = std::max({max_bound3[0], max_bound3[1], max_bound3[2]});
+  }
   BDM_ASSIGN_CONFIG_VALUE(diffusion_boundary_condition,
                           "simulation.diffusion_boundary_condition");
   BDM_ASSIGN_CONFIG_VALUE(diffusion_method, "simulation.diffusion_method");
