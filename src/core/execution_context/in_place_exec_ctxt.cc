@@ -140,15 +140,26 @@ void InPlaceExecutionContext::TearDownIterationAll(
 }
 
 void InPlaceExecutionContext::SetupAgentOpsAll(
-    const std::vector<ExecutionContext*>& all_exec_ctxts) {}
+    const std::vector<ExecutionContext*>& all_exec_ctxts) {
+  auto* sim = Simulation::GetActive();
+  auto* env = sim->GetEnvironment();
+  auto* param = sim->GetParam();
+  for (auto* ec : all_exec_ctxts) {
+    auto* ctxt = bdm_static_cast<InPlaceExecutionContext*>(ec);
+    ctxt->cached_env_ = env;
+    ctxt->cached_param_ = param;
+  }
+}
 
 void InPlaceExecutionContext::TearDownAgentOpsAll(
     const std::vector<ExecutionContext*>& all_exec_ctxts) {}
 
 void InPlaceExecutionContext::Execute(
     Agent* agent, AgentHandle ah, const std::vector<Operation*>& operations) {
-  auto* env = Simulation::GetActive()->GetEnvironment();
-  auto* param = Simulation::GetActive()->GetParam();
+  auto* env =
+      cached_env_ ? cached_env_ : Simulation::GetActive()->GetEnvironment();
+  auto* param =
+      cached_param_ ? cached_param_ : Simulation::GetActive()->GetParam();
 
   if (param->thread_safety_mechanism ==
       Param::ThreadSafetyMechanism::kUserSpecified) {
