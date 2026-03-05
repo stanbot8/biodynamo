@@ -34,6 +34,9 @@
 
 namespace bdm {
 
+class Environment;
+struct Param;
+
 namespace in_place_exec_ctxt_detail {
 class InPlaceExecutionContext_NeighborCacheValidity_Test;
 }
@@ -156,6 +159,11 @@ class InPlaceExecutionContext : public ExecutionContext {
   real_t cached_squared_search_radius_ = 0.0;
   /// Cache the value of Param::cache_neighbors
   bool cache_neighbors_ = false;
+
+  /// Cached pointers refreshed once per agent-ops phase in SetupAgentOpsAll,
+  /// so Execute avoids per-agent Simulation::GetActive() lookups.
+  Environment* cached_env_ = nullptr;
+  const Param* cached_param_ = nullptr;
 
   /// Check whether or not the neighbors in `neighbor_cache_` were queried with
   /// the same squared radius (`cached_squared_search_radius_`) as currently
