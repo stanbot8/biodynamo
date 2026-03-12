@@ -13,6 +13,7 @@
 // -----------------------------------------------------------------------------
 
 #include "continuum_interface.h"
+#include <cmath>
 #include "core/param/param.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"

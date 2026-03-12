@@ -13,6 +13,7 @@
 // -----------------------------------------------------------------------------
 
 #include "neuroscience/neurite_element.h"
+#include <cmath>
 #include <string>
 
 namespace bdm {

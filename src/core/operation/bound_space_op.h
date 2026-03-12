@@ -15,6 +15,8 @@
 #ifndef CORE_OPERATION_BOUND_SPACE_OP_H_
 #define CORE_OPERATION_BOUND_SPACE_OP_H_
 
+#include <cmath>
+
 #include "core/agent/agent.h"
 #include "core/operation/operation.h"
 #include "core/operation/operation_registry.h"

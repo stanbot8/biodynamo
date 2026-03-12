@@ -13,6 +13,7 @@
 // -----------------------------------------------------------------------------
 
 #include <algorithm>
+#include <cmath>
 #include <mutex>
 
 #include "core/diffusion/diffusion_grid.h"

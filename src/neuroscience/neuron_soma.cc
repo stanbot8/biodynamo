@@ -15,6 +15,7 @@
 #include "neuroscience/neuron_soma.h"
 
 #include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <locale>
 

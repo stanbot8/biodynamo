@@ -17,6 +17,7 @@
 
 #include <Math/DistFunc.h>
 #include <omp.h>
+#include <cmath>
 #include <ctime>
 #include <string>
 #include <vector>

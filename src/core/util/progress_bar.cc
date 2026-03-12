@@ -15,6 +15,7 @@
 #include "core/util/progress_bar.h"
 #include <unistd.h>
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <string>
 #include "core/util/timing.h"

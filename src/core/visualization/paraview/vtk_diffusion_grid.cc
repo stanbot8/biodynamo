@@ -13,6 +13,7 @@
 // -----------------------------------------------------------------------------
 
 #include "core/visualization/paraview/vtk_diffusion_grid.h"
+#include <cmath>
 // ParaView
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
