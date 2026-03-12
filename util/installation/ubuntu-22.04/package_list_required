@@ -9,6 +9,7 @@ libbz2-dev
 liblapack-dev
 libnuma-dev
 libomp5
+libtbb-dev
 libomp-dev
 libopenmpi-dev
 libpthread-stubs0-dev
