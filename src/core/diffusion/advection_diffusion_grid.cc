@@ -118,6 +118,24 @@ void AdvectionDiffusionGrid::DiffuseWithClosedEdge(real_t dt) {
   real_t* c1 = GetConcentrationPtr();
   real_t* c2 = GetScratchPtr();
 
+  if (!cfl_warned_) {
+    real_t vmax = 0;
+    for (size_t i = 0; i < velocity_.size(); i++) {
+      const auto& v = velocity_[i];
+      const real_t mag = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      if (mag > vmax)
+        vmax = mag;
+    }
+    const real_t cfl = dt * (6 * d * inv_dx2 + vmax * inv_dx);
+    if (cfl >= 1) {
+      Log::Warning("AdvectionDiffusionGrid",
+                   "CFL violated: dt * (6 D / dx^2 + |v|_max / dx) = ", cfl,
+                   " >= 1. Scheme is unstable. Substance: '",
+                   GetContinuumName(), "' dt=", dt, " D=", d, " dx=", dx,
+                   " |v|_max=", vmax);
+      cfl_warned_ = true;
+    }
+  }
 
 #pragma omp parallel for collapse(2)
   for (size_t z = 0; z < nz; z++) {

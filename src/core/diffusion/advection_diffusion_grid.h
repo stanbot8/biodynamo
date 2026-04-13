@@ -67,6 +67,7 @@ class AdvectionDiffusionGrid : public DiffusionGrid {
  private:
   void EnsureFlowFieldSized();
 
+  mutable bool cfl_warned_ = false;
   ParallelResizeVector<Real3> velocity_ = {};
   ParallelResizeVector<real_t> px_ = {};
   ParallelResizeVector<real_t> py_ = {};
