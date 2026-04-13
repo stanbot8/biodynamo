@@ -19,12 +19,18 @@
 namespace bdm {
 
 void EulerGrid::DiffuseWithClosedEdge(real_t dt) {
-  const auto nx = resolution_;
-  const auto ny = resolution_;
-  const auto nz = resolution_;
+  const size_t res = GetResolution();
+  const real_t bl = GetBoxLength();
+  const real_t dc0 = GetDiffusionCoefficients()[0];
+  const real_t mu = GetDecayConstant();
+  real_t* c1 = GetConcentrationPtr();
+  real_t* c2 = GetScratchPtr();
+  const auto nx = res;
+  const auto ny = res;
+  const auto nz = res;
 
-  const real_t ibl2 = 1 / (box_length_ * box_length_);
-  const real_t d = 1 - dc_[0];
+  const real_t ibl2 = 1 / (bl * bl);
+  const real_t d = 1 - dc0;
 
   constexpr size_t YBF = 16;
 #pragma omp parallel for collapse(2)
@@ -55,24 +61,30 @@ void EulerGrid::DiffuseWithClosedEdge(real_t dt) {
           b = c - nx * ny;
           t = c + nx * ny;
 
-          c2_[c] = c1_[c] * (1 - mu_ * dt) +
-                   (d * dt * ibl2) *
-                       (c1_[c - 1] - 2 * c1_[c] + c1_[c + 1] + c1_[s] -
-                        2 * c1_[c] + c1_[n] + c1_[b] - 2 * c1_[c] + c1_[t]);
+          c2[c] =
+              c1[c] * (1 - mu * dt) +
+              (d * dt * ibl2) * (c1[c - 1] - 2 * c1[c] + c1[c + 1] + c1[s] -
+                                 2 * c1[c] + c1[n] + c1[b] - 2 * c1[c] + c1[t]);
         }
       }  // tile ny
     }    // tile nz
   }      // block ny
-  c1_.swap(c2_);
+  SwapBuffers();
 }
 
 void EulerGrid::DiffuseWithOpenEdge(real_t dt) {
-  const auto nx = resolution_;
-  const auto ny = resolution_;
-  const auto nz = resolution_;
+  const size_t res = GetResolution();
+  const real_t bl = GetBoxLength();
+  const real_t dc0 = GetDiffusionCoefficients()[0];
+  const real_t mu = GetDecayConstant();
+  real_t* c1 = GetConcentrationPtr();
+  real_t* c2 = GetScratchPtr();
+  const auto nx = res;
+  const auto ny = res;
+  const auto nz = res;
 
-  const real_t ibl2 = 1 / (box_length_ * box_length_);
-  const real_t d = 1 - dc_[0];
+  const real_t ibl2 = 1 / (bl * bl);
+  const real_t d = 1 - dc0;
   std::array<int, 4> l;
 
   constexpr size_t YBF = 16;
@@ -122,10 +134,10 @@ void EulerGrid::DiffuseWithOpenEdge(real_t dt) {
           t = c + nx * ny;
         }
 
-        c2_[c] = c1_[c] * (1 - mu_ * dt) +
-                 (d * dt * ibl2) *
-                     (0 - 2 * c1_[c] + c1_[c + 1] + c1_[s] - 2 * c1_[c] +
-                      c1_[n] + c1_[b] - 2 * c1_[c] + c1_[t]);
+        c2[c] =
+            c1[c] * (1 - mu * dt) +
+            (d * dt * ibl2) * (0 - 2 * c1[c] + c1[c + 1] + c1[s] - 2 * c1[c] +
+                               c1[n] + c1[b] - 2 * c1[c] + c1[t]);
 #pragma omp simd
         for (x = 1; x < nx - 1; x++) {
           ++c;
@@ -133,34 +145,40 @@ void EulerGrid::DiffuseWithOpenEdge(real_t dt) {
           ++s;
           ++b;
           ++t;
-          c2_[c] =
-              c1_[c] * (1 - mu_ * dt) +
-              (d * dt * ibl2) * (c1_[c - 1] - 2 * c1_[c] + c1_[c + 1] +
-                                 l[0] * c1_[s] - 2 * c1_[c] + l[1] * c1_[n] +
-                                 l[2] * c1_[b] - 2 * c1_[c] + l[3] * c1_[t]);
+          c2[c] = c1[c] * (1 - mu * dt) +
+                  (d * dt * ibl2) * (c1[c - 1] - 2 * c1[c] + c1[c + 1] +
+                                     l[0] * c1[s] - 2 * c1[c] + l[1] * c1[n] +
+                                     l[2] * c1[b] - 2 * c1[c] + l[3] * c1[t]);
         }
         ++c;
         ++n;
         ++s;
         ++b;
         ++t;
-        c2_[c] = c1_[c] * (1 - mu_ * dt) +
-                 (d * dt * ibl2) *
-                     (c1_[c - 1] - 2 * c1_[c] + 0 + c1_[s] - 2 * c1_[c] +
-                      c1_[n] + c1_[b] - 2 * c1_[c] + c1_[t]);
+        c2[c] =
+            c1[c] * (1 - mu * dt) +
+            (d * dt * ibl2) * (c1[c - 1] - 2 * c1[c] + 0 + c1[s] - 2 * c1[c] +
+                               c1[n] + c1[b] - 2 * c1[c] + c1[t]);
       }  // tile ny
     }    // tile nz
   }      // block ny
-  c1_.swap(c2_);
+  SwapBuffers();
 }
 
 void EulerGrid::DiffuseWithDirichlet(real_t dt) {
-  const auto nx = resolution_;
-  const auto ny = resolution_;
-  const auto nz = resolution_;
+  const size_t res = GetResolution();
+  const real_t bl = GetBoxLength();
+  const auto& gd = GetDimensions();
+  const real_t dc0 = GetDiffusionCoefficients()[0];
+  const real_t mu = GetDecayConstant();
+  real_t* c1 = GetConcentrationPtr();
+  real_t* c2 = GetScratchPtr();
+  const auto nx = res;
+  const auto ny = res;
+  const auto nz = res;
 
-  const real_t ibl2 = 1 / (box_length_ * box_length_);
-  const real_t d = 1 - dc_[0];
+  const real_t ibl2 = 1 / (bl * bl);
+  const real_t d = 1 - dc0;
 
   const auto sim_time = GetSimulatedTime();
 
@@ -185,11 +203,11 @@ void EulerGrid::DiffuseWithDirichlet(real_t dt) {
           if (x == 0 || x == (nx - 1) || y == 0 || y == (ny - 1) || z == 0 ||
               z == (nz - 1)) {
             // For all boxes on the boundary, we simply evaluate the boundary
-            real_t real_x = grid_dimensions_[0] + x * box_length_;
-            real_t real_y = grid_dimensions_[0] + y * box_length_;
-            real_t real_z = grid_dimensions_[0] + z * box_length_;
-            c2_[c] =
-                boundary_condition_->Evaluate(real_x, real_y, real_z, sim_time);
+            real_t real_x = gd[0] + x * bl;
+            real_t real_y = gd[0] + y * bl;
+            real_t real_z = gd[0] + z * bl;
+            c2[c] = GetBoundaryCondition()->Evaluate(real_x, real_y, real_z,
+                                                     sim_time);
           } else {
             // For inner boxes, we compute the regular stencil update
             n = c - nx;
@@ -197,27 +215,34 @@ void EulerGrid::DiffuseWithDirichlet(real_t dt) {
             b = c - nx * ny;
             t = c + nx * ny;
 
-            c2_[c] = c1_[c] * (1 - mu_ * dt) +
-                     (d * dt * ibl2) *
-                         (c1_[c - 1] - 2 * c1_[c] + c1_[c + 1] + c1_[s] -
-                          2 * c1_[c] + c1_[n] + c1_[b] - 2 * c1_[c] + c1_[t]);
+            c2[c] = c1[c] * (1 - mu * dt) +
+                    (d * dt * ibl2) *
+                        (c1[c - 1] - 2 * c1[c] + c1[c + 1] + c1[s] - 2 * c1[c] +
+                         c1[n] + c1[b] - 2 * c1[c] + c1[t]);
           }
           ++c;
         }
       }  // tile ny
     }    // tile nz
   }      // block ny
-  c1_.swap(c2_);
+  SwapBuffers();
 }
 
 void EulerGrid::DiffuseWithNeumann(real_t dt) {
-  const size_t nx = resolution_;
-  const size_t ny = resolution_;
-  const size_t nz = resolution_;
+  const size_t res = GetResolution();
+  const real_t bl = GetBoxLength();
+  const auto& gd = GetDimensions();
+  const real_t dc0 = GetDiffusionCoefficients()[0];
+  const real_t mu = GetDecayConstant();
+  real_t* c1 = GetConcentrationPtr();
+  real_t* c2 = GetScratchPtr();
+  const size_t nx = res;
+  const size_t ny = res;
+  const size_t nz = res;
   const size_t num_boxes = nx * ny * nz;
 
-  const real_t ibl2 = 1 / (box_length_ * box_length_);
-  const real_t d = 1 - dc_[0];
+  const real_t ibl2 = 1 / (bl * bl);
+  const real_t d = 1 - dc0;
 
   const auto sim_time = GetSimulatedTime();
 
@@ -247,22 +272,21 @@ void EulerGrid::DiffuseWithNeumann(real_t dt) {
           // Clamp to avoid out of bounds access. Clamped values are initialized
           // to a wrong value but will be overwritten by the boundary condition
           // evaluation. All other values are correct.
-          real_t left{c1_[std::clamp(c - 1, size_t{0}, num_boxes - 1)]};
-          real_t right{c1_[std::clamp(c + 1, size_t{0}, num_boxes - 1)]};
-          real_t bottom{c1_[std::clamp(b, size_t{0}, num_boxes - 1)]};
-          real_t top{c1_[std::clamp(t, size_t{0}, num_boxes - 1)]};
-          real_t north{c1_[std::clamp(n, size_t{0}, num_boxes - 1)]};
-          real_t south{c1_[std::clamp(s, size_t{0}, num_boxes - 1)]};
+          real_t left{c1[std::clamp(c - 1, size_t{0}, num_boxes - 1)]};
+          real_t right{c1[std::clamp(c + 1, size_t{0}, num_boxes - 1)]};
+          real_t bottom{c1[std::clamp(b, size_t{0}, num_boxes - 1)]};
+          real_t top{c1[std::clamp(t, size_t{0}, num_boxes - 1)]};
+          real_t north{c1[std::clamp(n, size_t{0}, num_boxes - 1)]};
+          real_t south{c1[std::clamp(s, size_t{0}, num_boxes - 1)]};
           real_t center_factor{6.0};
 
           if (x == 0 || x == (nx - 1) || y == 0 || y == (ny - 1) || z == 0 ||
               z == (nz - 1)) {
-            real_t real_x = grid_dimensions_[0] + x * box_length_;
-            real_t real_y = grid_dimensions_[0] + y * box_length_;
-            real_t real_z = grid_dimensions_[0] + z * box_length_;
-            real_t boundary_value =
-                -box_length_ *
-                boundary_condition_->Evaluate(real_x, real_y, real_z, sim_time);
+            real_t real_x = gd[0] + x * bl;
+            real_t real_y = gd[0] + y * bl;
+            real_t real_z = gd[0] + z * bl;
+            real_t boundary_value = -bl * GetBoundaryCondition()->Evaluate(
+                                              real_x, real_y, real_z, sim_time);
 
             if (x == 0) {
               left = boundary_value;
@@ -289,25 +313,31 @@ void EulerGrid::DiffuseWithNeumann(real_t dt) {
             }
           }
 
-          c2_[c] = c1_[c] * (1 - mu_ * dt) +
-                   (d * dt * ibl2) * (left + right + south + north + top +
-                                      bottom - center_factor * c1_[c]);
+          c2[c] = c1[c] * (1 - mu * dt) +
+                  (d * dt * ibl2) * (left + right + south + north + top +
+                                     bottom - center_factor * c1[c]);
 
           ++c;
         }
       }  // tile ny
     }    // tile nz
   }      // block ny
-  c1_.swap(c2_);
+  SwapBuffers();
 }
 
 void EulerGrid::DiffuseWithPeriodic(real_t dt) {
-  const size_t nx = resolution_;
-  const size_t ny = resolution_;
-  const size_t nz = resolution_;
+  const size_t res = GetResolution();
+  const real_t bl = GetBoxLength();
+  const real_t dc0 = GetDiffusionCoefficients()[0];
+  const real_t mu = GetDecayConstant();
+  real_t* c1 = GetConcentrationPtr();
+  real_t* c2 = GetScratchPtr();
+  const size_t nx = res;
+  const size_t ny = res;
+  const size_t nz = res;
 
-  const real_t dx = box_length_;
-  const real_t d = 1 - dc_[0];
+  const real_t dx = bl;
+  const real_t d = 1 - dc0;
 
   constexpr size_t YBF = 16;
 #pragma omp parallel for collapse(2)
@@ -354,16 +384,16 @@ void EulerGrid::DiffuseWithPeriodic(real_t dt) {
           }
 
           // Stencil update
-          c2_[c] = c1_[c] * (1 - (mu_ * dt)) +
-                   ((d * dt / (dx * dx)) * (c1_[l] + c1_[r] + c1_[n] + c1_[s] +
-                                            c1_[t] + c1_[b] - 6.0 * c1_[c]));
+          c2[c] = c1[c] * (1 - (mu * dt)) +
+                  ((d * dt / (dx * dx)) * (c1[l] + c1[r] + c1[n] + c1[s] +
+                                           c1[t] + c1[b] - 6.0 * c1[c]));
 
           ++c;
         }
       }  // tile ny
     }    // tile nz
   }      // block ny
-  c1_.swap(c2_);
+  SwapBuffers();
 }
 
 }  // namespace bdm
