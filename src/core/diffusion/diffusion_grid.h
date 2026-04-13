@@ -363,8 +363,6 @@ class DiffusionGrid : public ScalarField {
   real_t GetRawDiffusionCoefficient() const { return 1 - dc_[0]; }
 
  private:
-  friend class EulerGrid;
-  friend class EulerDepletionGrid;
   friend class TestGrid;  // class used for testing (e.g. initialization)
 
   void ParametersCheck(real_t dt);
