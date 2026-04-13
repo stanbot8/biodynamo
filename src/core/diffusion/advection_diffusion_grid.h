@@ -35,6 +35,9 @@ namespace bdm {
 /// diffusive and advective flux at each face: 1.0 = open, 0.0 = sealed.
 /// Faces are indexed by the lower voxel along that axis (px_[i] is the
 /// face between voxel i and i+1 in x).
+///
+/// CFL-like stability requires  dt * (6 D / dx^2 + |v|_max / dx) < 1.
+/// ParametersCheck warns if this is violated.
 class AdvectionDiffusionGrid : public DiffusionGrid {
  public:
   AdvectionDiffusionGrid() = default;
@@ -72,6 +75,8 @@ class AdvectionDiffusionGrid : public DiffusionGrid {
  private:
   void EnsureFlowFieldSized();
 
+  /// Set to true once the CFL warning has fired so it only prints once per run.
+  mutable bool cfl_warned_ = false;
   /// Per-voxel velocity [um / time-unit].
   ParallelResizeVector<Real3> velocity_ = {};
   /// Per-face permeability for +x, +y, +z faces. Face at index i is between
