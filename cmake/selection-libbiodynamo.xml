@@ -10,6 +10,7 @@
     <class name="bdm::neuroscience::Param" />
     <class name="bdm::ScalarField" />
     <class name="bdm::Continuum" />
+    <class name="bdm::AdvectionDiffusionGrid" />
     <class name="bdm::EulerGrid" />
     <class name="bdm::EulerDepletionGrid" />
     <class name="bdm::BoundaryCondition" />
