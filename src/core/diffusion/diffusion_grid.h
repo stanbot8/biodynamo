@@ -348,9 +348,21 @@ class DiffusionGrid : public ScalarField {
   /// can be calculated on the fly.
   void TurnOffGradientCalculation() { precompute_gradients_ = false; }
 
+ protected:
+  /// Mutable access to the concentration buffer. Subclass solvers read from
+  /// this array in their stencil step.
+  real_t* GetConcentrationPtr() { return c1_.data(); }
+  /// Mutable access to the scratch buffer where the next-timestep values are
+  /// written before being swapped into the live buffer via SwapBuffers().
+  real_t* GetScratchPtr() { return c2_.data(); }
+  /// Swap the live and scratch buffers. Call at the end of a step after
+  /// writing all next-timestep values into the scratch buffer.
+  void SwapBuffers() { c1_.swap(c2_); }
+  /// Raw diffusion coefficient D. The stored dc_[0] is 1 - D for stencil
+  /// convenience; this accessor returns D directly.
+  real_t GetRawDiffusionCoefficient() const { return 1 - dc_[0]; }
+
  private:
-  friend class EulerGrid;
-  friend class EulerDepletionGrid;
   friend class TestGrid;  // class used for testing (e.g. initialization)
 
   void ParametersCheck(real_t dt);

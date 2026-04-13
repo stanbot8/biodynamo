@@ -19,6 +19,9 @@
 namespace bdm {
 
 void EulerDepletionGrid::ApplyDepletion(real_t dt) {
+  const size_t nboxes = GetNumBoxes();
+  real_t* c1 = GetConcentrationPtr();
+  real_t* c2 = GetScratchPtr();
   auto* sim = Simulation::GetActive();
   const auto* rm = sim->GetResourceManager();
 
@@ -27,7 +30,7 @@ void EulerDepletionGrid::ApplyDepletion(real_t dt) {
   // want to continue to use c1 for the next step. Thus, we swap pointers here
   // (and again after the depletion). This is necessary because ApplyDepletion
   // is called after the diffusion of the EulerGrid (swaps pointer at the end).
-  std::swap(c1_, c2_);
+  std::swap(c1, c2);
 
   for (size_t s = 0; s < binding_substances_.size(); s++) {
     if (binding_coefficients_[s] == 0.0) {
@@ -50,14 +53,14 @@ void EulerDepletionGrid::ApplyDepletion(real_t dt) {
       auto* depleting_concentration =
           rm->GetDiffusionGrid(binding_substances_[s])->GetAllConcentrations();
 #pragma omp parallel for simd
-      for (size_t c = 0; c < total_num_boxes_; c++) {
-        c2_[c] -=
-            c1_[c] * binding_coefficients_[s] * depleting_concentration[c] * dt;
+      for (size_t c = 0; c < nboxes; c++) {
+        c2[c] -=
+            c1[c] * binding_coefficients_[s] * depleting_concentration[c] * dt;
       }
     }
   }
   // See comment above.
-  std::swap(c1_, c2_);
+  std::swap(c1, c2);
 }
 
 void EulerDepletionGrid::DiffuseWithClosedEdge(real_t dt) {
