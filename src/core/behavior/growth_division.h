@@ -19,14 +19,13 @@
 #include "core/agent/cell_division_event.h"
 #include "core/behavior/behavior.h"
 #include "core/util/log.h"
-#include "core/util/root.h"
 
 namespace bdm {
 
 /// This behavior grows the agent until the diameter reaches
 /// the specified threshold and divides the object afterwards.
 class GrowthDivision : public Behavior {
-  BDM_BEHAVIOR_HEADER(GrowthDivision, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(GrowthDivision, Behavior);
 
  public:
   GrowthDivision() { AlwaysCopyToNew(); }
