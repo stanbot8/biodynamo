@@ -123,22 +123,16 @@ class Behavior {
  private:
   NewAgentEventUid copy_mask_ = 0;
   NewAgentEventUid remove_mask_ = 0;
-  BDM_CLASS_DEF(Behavior, 2);
 };
 
 /// Inserts boilerplate code for behaviors with state
-#define BDM_BEHAVIOR_HEADER(class_name, base_class, class_version_id)        \
+#define BDM_BEHAVIOR_HEADER(class_name, base_class)                          \
  public:                                                                     \
   using Base = base_class;                                                   \
   /** Create a new instance of this object using the default constructor. */ \
   Behavior* New() const override { return new class_name(); }                \
   /** Create a new instance of this object using the copy constructor. */    \
-  Behavior* NewCopy() const override { return new class_name(*this); }       \
-                                                                             \
- private:                                                                    \
-  BDM_CLASS_DEF_OVERRIDE(class_name, class_version_id);                      \
-                                                                             \
- public:
+  Behavior* NewCopy() const override { return new class_name(*this); }
 
 }  // namespace bdm
 

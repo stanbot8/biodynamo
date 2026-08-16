@@ -24,7 +24,7 @@
 namespace bdm {
 
 class SphericalAgent : public Agent {
-  BDM_AGENT_HEADER(SphericalAgent, Agent, 1);
+  BDM_AGENT_HEADER(SphericalAgent, Agent);
 
  public:
   SphericalAgent() : diameter_(1.0) {}
