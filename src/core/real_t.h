@@ -25,9 +25,6 @@ constexpr const char* kRealtName = "double";
 
 using real_t = BDM_REALT;
 
-// Workaround, bc the ROOT interpreter does not process the
-// following code:
-// constexpr const char* kRealtName = #BDM_REALT;
 #define BDM_STRINGIFY_IMPL(var) #var
 #define BDM_STRINGIFY(var) BDM_STRINGIFY_IMPL(var)
 constexpr const char* kRealtName = BDM_STRINGIFY(BDM_REALT);

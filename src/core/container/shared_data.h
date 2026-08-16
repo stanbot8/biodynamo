@@ -17,44 +17,25 @@
 
 #include <array>
 #include <cstdint>
-#include <new>
 #include <vector>
 
-#include "core/util/root.h"
-
-/// This is BioDynaMo's cacheline size. If you system has a different
-/// cacheline size, consider changing the value accordingly. In particular,
-/// this value is used to align the data in the SharedData class to avoid false
-/// sharing between threads. From C++17 on, the standard library provides
-/// hardware_constructive_interference_size and
-/// hardware_destructive_interference_size, which can be used instead of this
-/// constant. If the standard library does not provide these constants, the
-/// default value for x86-64 is used.
-#ifdef __cpp_lib_hardware_interference_size
-using std::hardware_constructive_interference_size;
-using std::hardware_destructive_interference_size;
-#else
-// Default values for x86-64
-// 64 bytes on x86-64 │ L1_CACHE_BYTES │ L1_CACHE_SHIFT │ __cacheline_aligned │
-// ...
-constexpr std::size_t hardware_constructive_interference_size = 64u;
-constexpr std::size_t hardware_destructive_interference_size = 64u;
-#endif
-
 namespace bdm {
+
+/// Stable x86-64 cache-line size used to keep neighboring thread data apart.
+constexpr std::size_t kCacheLineSize = 64u;
 
 /// The SharedData class avoids false sharing between threads.
 template <typename T>
 class SharedData {
  public:
   /// Wrapper for a chacheline-size aligned T.
-  struct alignas(hardware_destructive_interference_size) AlignedT {
+  struct alignas(kCacheLineSize) AlignedT {
     T data;
   };
 
   /// Data type definition for a vector whose entries fill full cache lines.
   /// A vector whose components' sizes are a multiple of the cacheline size,
-  /// e.g sizeof(Data[i]) = N*hardware_destructive_interference_size.
+  /// e.g. sizeof(Data[i]) = N * kCacheLineSize.
   using Data = std::vector<AlignedT>;
 
   SharedData() = default;
@@ -101,8 +82,6 @@ class SharedData {
 
  private:
   Data data_;
-
-  BDM_CLASS_DEF_NV(SharedData, 1)
 };
 
 }  // namespace bdm

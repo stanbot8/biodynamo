@@ -26,6 +26,29 @@
 namespace bdm {
 namespace in_place_exec_ctxt_detail {
 
+class TransientAgent : public TestAgent {
+  BDM_AGENT_HEADER(TransientAgent, TestAgent);
+
+ public:
+  ~TransientAgent() override { ++destruction_count; }
+
+  static uint64_t destruction_count;
+};
+
+uint64_t TransientAgent::destruction_count = 0;
+
+TEST(InPlaceExecutionContext, OwnsTransientAgentsUntilCommit) {
+  TransientAgent::destruction_count = 0;
+  {
+    Simulation sim(TEST_NAME);
+    sim.GetExecutionContext()->AddAgent(new TransientAgent());
+
+    EXPECT_EQ(0u, sim.GetResourceManager()->GetNumAgents());
+    EXPECT_EQ(0u, TransientAgent::destruction_count);
+  }
+  EXPECT_EQ(1u, TransientAgent::destruction_count);
+}
+
 TEST(InPlaceExecutionContext, RemoveAgent) {
   Simulation sim(TEST_NAME);
   auto* rm = sim.GetResourceManager();
@@ -76,7 +99,7 @@ void RunRemoveAgentMultithreadingTest(const char* name, uint64_t num_removed) {
     uids[i] = AgentUid(i);
   }
   auto* random = sim.GetRandom();
-  std::shuffle(uids.begin(), uids.end(), Ubrng(random));
+  std::shuffle(uids.begin(), uids.end(), *random);
 
 #pragma omp parallel for
   for (uint64_t i = 0; i < num_removed; ++i) {
@@ -358,12 +381,13 @@ TEST(InPlaceExecutionContext, ExecuteThreadSafetyTestAutomaticThreadSafety) {
 
 TEST(InPlaceExecutionContext, PushBackMultithreadingTest) {
   Simulation simulation(TEST_NAME);
+  constexpr uint64_t kAgentCount = 100000;
 
   std::vector<uint64_t> used_indexes;
-  used_indexes.reserve(100000);
+  used_indexes.reserve(kAgentCount);
 
 #pragma omp parallel for
-  for (uint64_t i = 0; i < 100000; ++i) {
+  for (uint64_t i = 0; i < kAgentCount; ++i) {
     auto* new_agent = new TestAgent();
     new_agent->SetData(new_agent->GetUid().GetIndex());
 

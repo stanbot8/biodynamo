@@ -687,7 +687,7 @@ class UniformGridEnvironment : public Environment {
   /// to trigger a diffusion grid change
   std::array<int32_t, 2> threshold_dimensions_;
 
-  LoadBalanceInfoUG lbi_;  //!
+  LoadBalanceInfoUG lbi_;
 
   /// Holds instance of NeighborMutexBuilder.
   /// NeighborMutexBuilder is updated if `Param::thread_safety_mechanism`

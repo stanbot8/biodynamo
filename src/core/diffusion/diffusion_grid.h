@@ -17,6 +17,7 @@
 
 #include <array>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -26,7 +27,6 @@
 #include "core/container/parallel_resize_vector.h"
 #include "core/diffusion/continuum_interface.h"
 #include "core/util/log.h"
-#include "core/util/root.h"
 #include "core/util/spinlock.h"
 
 namespace bdm {
@@ -49,7 +49,6 @@ enum class InteractionMode { kAdditive = 0, kExponential = 1, kLogistic = 2 };
 class BoundaryCondition {
  public:
   BoundaryCondition() = default;
-  explicit BoundaryCondition(const TRootIOCtor*) {}
   virtual ~BoundaryCondition() = default;
 
   /// @brief Boundary condition for Neumann and Dirichlet boundary conditions.
@@ -60,8 +59,6 @@ class BoundaryCondition {
   /// conditions)
   /// @return The value of the boundary condition at the given position and time
   virtual real_t Evaluate(real_t x, real_t y, real_t z, real_t time) const = 0;
-
-  BDM_CLASS_DEF(BoundaryCondition, 1);
 };
 
 /// @brief  This class implements constant boundary conditions (Dirichlet and
@@ -83,14 +80,11 @@ class ConstantBoundaryCondition : public BoundaryCondition {
  private:
   /// Constant value of the boundary condition for all positions and times.
   real_t value_ = 0.0;
-
-  BDM_CLASS_DEF_OVERRIDE(ConstantBoundaryCondition, 1);
 };
 
 class DiffusionGrid : public ScalarField {
  public:
   DiffusionGrid() = default;
-  explicit DiffusionGrid(const TRootIOCtor*) {}
   DiffusionGrid(int substance_id, const std::string& substance_name, real_t dc,
                 real_t mu, int resolution = 10);
   ~DiffusionGrid() override = default;
@@ -377,7 +371,7 @@ class DiffusionGrid : public ScalarField {
   real_t box_volume_ = 0;
   /// Lock for each voxel used to prevent race conditions between
   /// multiple threads
-  mutable ParallelResizeVector<Spinlock> locks_ = {};  //!
+  mutable ParallelResizeVector<Spinlock> locks_ = {};
   /// The array of concentration values
   ParallelResizeVector<real_t> c1_ = {};
   /// An extra concentration data buffer for faster value updating
@@ -405,10 +399,8 @@ class DiffusionGrid : public ScalarField {
   real_t last_dt_ = 0.0;
   /// If false, grid dimensions are even; if true, they are odd
   bool parity_ = false;
-  /// A list of functions that initialize this diffusion grid
-  /// ROOT currently doesn't support IO of std::function
-  std::vector<std::function<real_t(real_t, real_t, real_t)>> initializers_ =
-      {};  //!
+  /// A list of functions that initialize this diffusion grid.
+  std::vector<std::function<real_t(real_t, real_t, real_t)>> initializers_ = {};
   // Turn to true after gradient initialization
   bool init_gradient_ = false;
   /// Type of boundary conditions
@@ -423,8 +415,6 @@ class DiffusionGrid : public ScalarField {
   /// Flag to avoid gradient computation if not needed. (E.g. if multiple DGs
   /// are used but the gradient is only needed for one of them.)
   bool precompute_gradients_ = true;
-
-  BDM_CLASS_DEF_OVERRIDE(DiffusionGrid, 1);
 };
 
 }  // namespace bdm

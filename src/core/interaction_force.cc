@@ -28,6 +28,11 @@
 
 namespace bdm {
 
+namespace {
+constexpr real_t kCoincidentCenterTolerance = 1e-8;
+constexpr real_t kParallelSegmentTolerance = 1e-12;
+}  // namespace
+
 using neuroscience::NeuriteElement;
 
 Real4 InteractionForce::Calculate(const Agent* lhs, const Agent* rhs) const {
@@ -92,7 +97,7 @@ void InteractionForce::ForceBetweenSpheres(const Agent* sphere_lhs,
   }
   // to avoid a division by 0 if the centers are (almost) at the same
   //  location
-  if (center_distance < 0.00000001) {
+  if (center_distance < kCoincidentCenterTolerance) {
     auto* random = Simulation::GetActive()->GetRandom();
     auto force2on1 = random->template UniformArray<3>(-3.0, 3.0);
     *result = force2on1;
@@ -247,7 +252,7 @@ void InteractionForce::ForceBetweenCylinders(const Agent* cylinder1,
   real_t denom = d2121 * d4343 - d4321 * d4321;
 
   // if the two segments are not ABSOLUTELY parallel
-  if (denom > 0.000000000001) {  /// TODO(neurites) hardcoded value
+  if (denom > kParallelSegmentTolerance) {
     real_t numer = d1343 * d4321 - d1321 * d4343;
 
     real_t mua = numer / denom;
@@ -299,8 +304,7 @@ Real4 InteractionForce::ComputeForceOfASphereOnASphere(const Real3& c1,
     return Real4{0.0, 0.0, 0.0, 0.0};
   }
   // to avoid a division by 0 if the centers are (almost) at the same location
-  if (distance_between_centers <
-      0.00000001) {  // TODO(neurites) hard coded values
+  if (distance_between_centers < kCoincidentCenterTolerance) {
     auto* random = Simulation::GetActive()->GetRandom();
     auto force2on1 = random->template UniformArray<3>(-3.0, 3.0);
     return Real4{force2on1[0], force2on1[1], force2on1[2], 0.0};
