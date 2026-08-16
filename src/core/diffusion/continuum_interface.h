@@ -52,7 +52,6 @@ namespace bdm {
 class Continuum {
  public:
   Continuum() = default;
-  explicit Continuum(const TRootIOCtor *) {}
   virtual ~Continuum() = default;
 
   /// Manages the time evolution of the continuum. The method is called by the
@@ -124,15 +123,12 @@ class Continuum {
 
   /// Id of the continuum.
   int continuum_id_ = -1;
-
-  BDM_CLASS_DEF(Continuum, 1);  // NOLINT
 };
 
 /// Interface for scalar fields. See `Continuum` for more information.
 class ScalarField : public Continuum {
  public:
   ScalarField() = default;
-  explicit ScalarField(const TRootIOCtor *) {}
   ~ScalarField() override = default;
 
   /// Returns the value of the scalar field at the given position.
@@ -140,15 +136,12 @@ class ScalarField : public Continuum {
 
   /// Returns the gradient of the scalar field at the given position.
   virtual Real3 GetGradient(const Real3 &position) const = 0;
-
-  BDM_CLASS_DEF_OVERRIDE(ScalarField, 1);  // NOLINT
 };
 
 /// Interface for vector fields. See `Continuum` for more information.
 class VectorField : public Continuum {
  public:
   VectorField() = default;
-  explicit VectorField(const TRootIOCtor *) {}
   ~VectorField() override = default;
 
   /// Returns the value of the vector field at the given position.
@@ -159,8 +152,6 @@ class VectorField : public Continuum {
 
   /// Returns the curl of the vector field at the given position.
   virtual real_t GetCurl(const Real3 &position) const = 0;
-
-  BDM_CLASS_DEF_OVERRIDE(VectorField, 1);  // NOLINT
 };
 
 }  // namespace bdm

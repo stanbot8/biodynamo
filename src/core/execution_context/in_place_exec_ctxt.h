@@ -75,7 +75,7 @@ class InPlaceExecutionContext : public ExecutionContext {
   explicit InPlaceExecutionContext(
       const std::shared_ptr<ThreadSafeAgentUidMap>& map);
 
-  ~InPlaceExecutionContext() override;
+  ~InPlaceExecutionContext() override = default;
 
   /// This function is called at the beginning of each iteration to setup all
   /// execution contexts.
@@ -141,8 +141,8 @@ class InPlaceExecutionContext : public ExecutionContext {
 
   ThreadInfo* tinfo_;
 
-  /// Pointer to new agents
-  std::vector<Agent*> new_agents_;
+  /// Owns agents until they are transferred to the ResourceManager.
+  std::vector<std::unique_ptr<Agent>> transient_agents_;
 
   /// Contains unique ids of agents that will be removed at the end of each
   /// iteration. AgentUids are separated by numa node.

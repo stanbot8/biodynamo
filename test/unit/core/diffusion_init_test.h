@@ -101,7 +101,6 @@ class TestGrid : public DiffusionGrid {
   }
 
  private:
-  BDM_CLASS_DEF_OVERRIDE(TestGrid, 1);
 };
 
 }  // namespace bdm

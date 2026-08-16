@@ -79,10 +79,7 @@ class ExecutionContext {
                                const Real3& query_position,
                                real_t squared_radius) = 0;
 
-  /// @brief  Adds the agent to the simulation (threadsafe, takes ownership).
-  ///         Note that we avoid the use of smart pointers for the agents to
-  ///         avoid unnecessary overhead during construction of the agent
-  ///         (performance argument).
+  /// @brief Adds the agent to the simulation (thread-safe, takes ownership).
   /// `usage example`:
   /// \code
   ///   auto* ctxt = Simulation::GetActive()->GetExecutionContext();

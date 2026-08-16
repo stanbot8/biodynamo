@@ -15,7 +15,6 @@
 #ifndef CORE_GPU_CUDA_ERROR_CHK_H_
 #define CORE_GPU_CUDA_ERROR_CHK_H_
 
-#if !defined(__ROOTCLING__) && !defined(G__DICTIONARY)
 #ifdef USE_CUDA
 
 #include <unistd.h>
@@ -40,5 +39,4 @@ inline void GpuAssert(cudaError_t code, const char *file, int line,
 }
 
 #endif  // USE_CUDA
-#endif  // !__ROOTCLING__ && !G__DICTIONARY
 #endif  // CORE_GPU_CUDA_ERROR_CHK_H_

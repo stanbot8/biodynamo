@@ -47,6 +47,8 @@ class ThreadInfo {
   /// Returns the number of NUMA nodes on this machine
   int GetNumaNodes() const { return numa_nodes_; }
 
+  bool IsNumaAvailable() const { return numa_available_; }
+
   /// Returns the numa node the given openmp thread is bound to.
   int GetNumaNode(int omp_thread_id) const {
     return thread_numa_mapping_[omp_thread_id];
@@ -76,8 +78,16 @@ class ThreadInfo {
   /// `numa_run_on_node`, `Renew()` must be called to update the thread
   /// metadata.
   void Renew() {
+#ifdef USE_NUMA
+    numa_available_ = numa_available() != -1 && numa_num_configured_nodes() > 1;
+#else
+    numa_available_ = false;
+#endif
+
     max_threads_ = omp_get_max_threads();
-    numa_nodes_ = static_cast<uint16_t>(numa_num_configured_nodes());
+    numa_nodes_ = numa_available_
+                      ? static_cast<uint16_t>(numa_num_configured_nodes())
+                      : 1;
 
     thread_numa_mapping_.clear();
     numa_thread_id_.clear();
@@ -91,7 +101,15 @@ class ThreadInfo {
 #pragma omp parallel
     {
       int tid = omp_get_thread_num();
-      thread_numa_mapping_[tid] = numa_node_of_cpu(sched_getcpu());
+#ifdef USE_NUMA
+      if (numa_available_) {
+        unsigned int numa_node = 0;
+        if (getcpu(nullptr, &numa_node) != 0) {
+          Log::Fatal("ThreadInfo::Renew", "Call to getcpu failed");
+        }
+        thread_numa_mapping_[tid] = static_cast<int>(numa_node);
+      }
+#endif
     }
 
     // (numa -> number of associated threads), and
@@ -138,6 +156,7 @@ class ThreadInfo {
   int max_threads_;
   /// Number of NUMA nodes on this machine.
   uint16_t numa_nodes_;
+  bool numa_available_ = false;
 
   /// Contains the mapping thread id -> numa node \n
   /// vector position = omp_thread_id \n

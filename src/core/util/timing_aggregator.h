@@ -20,8 +20,6 @@
 #include <string>
 #include <vector>
 
-#include "TSystem.h"
-
 #include "core/simulation.h"
 #include "core/util/math.h"
 
@@ -54,7 +52,6 @@ class TimingAggregator {
  private:
   std::map<std::string, std::vector<int64_t>> timings_;
   std::vector<std::string> descriptions_;
-  BDM_CLASS_DEF_NV(TimingAggregator, 1);
 
   friend std::ostream& operator<<(std::ostream& os, const TimingAggregator& p);
 };

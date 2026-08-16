@@ -17,14 +17,4 @@
 
 #include "core/container/parallel_resize_vector.h"
 
-namespace bdm {
-
-// For genreflex to generate appropriate dictionaries
-#ifdef __ROOTCLING__
-static ParallelResizeVector<unsigned> prvu;
-static ParallelResizeVector<int> prvi;
-#endif
-
-}  // namespace bdm
-
 #endif  // UNIT_CORE_CONTAINER_PARALLEL_RESIZE_VECTOR_TEST_H_
