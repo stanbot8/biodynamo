@@ -76,7 +76,6 @@ split_multiple_lib_path() {
 
 arch=@architecture@
 platform=@platform@
-rootvers=@rootvers@
 bindir=@bindir@
 libdir=@libdir@
 incdir=@incdir@
@@ -108,7 +107,7 @@ cxxversionflag="-std=c++${cxxstd}"
 ### end of machine and compiler dependent settings ###
 
 usage="\
-Usage: bdm-config [--version] [--root-version]\
+Usage: bdm-config [--version]\
  [--debug] [--opt] [--cxxflags] [--cxxincludes]\
  [--ldflags] [--libs] [--bindir] [--libdir] [--incdir]\
  [--cxx] [--ld ] [--cmakedir] [--cmake-invoke] [--config]\
@@ -145,24 +144,19 @@ while test $# -gt 0; do
          exit 1
       fi
       ;;
-    --root-version)
-      ### Output the ROOT version number used to build BDM with.
-      out="$out $rootvers"
-      ;;
     --cxxflags)
       ### Output the compiler flags
       if test ${incdir} != /usr/include; then
          includes=-I${incdir}
       fi
-      out="$out $includes $cxxdefines $cxxversionflag $cxxflags $cxxoptflags $cxxdebflags $(root-config --cflags)"
+      out="$out $includes $cxxdefines $cxxversionflag $cxxflags $cxxoptflags $cxxdebflags"
       ;;
     --cxxincludes)
       ### Output only the include flags for BioDynaMo headers
       if test ${incdir} != /usr/include; then
          includes=-I${incdir}
       fi
-      out="$out $includes $(root-config --noauxcflags --cflags)"
-      # local omp directory needed for rootcling (used in bdm-code-generation)
+      out="$out $includes"
       out="$out -I${incdir}/../omp"
       ;;
     --cxxdefines)
@@ -171,7 +165,7 @@ while test $# -gt 0; do
       ;;
     --ldflags)
       ### Output linker flags
-      out="$out $ldflags $cxxflags $cxxoptflags $cxxdebflags $(root-config --ldflags)"
+      out="$out $ldflags $cxxflags $cxxoptflags $cxxdebflags"
       ;;
     --libs)
       if test ${libdir} != /usr/lib; then
@@ -181,7 +175,7 @@ while test $# -gt 0; do
          split_multiple_lib_path $omplibs
          omplibs=$found_libs
       fi
-      libs="$bdmlibs $(root-config --libs) $omplibs"
+      libs="$bdmlibs $omplibs"
       out="$out $libdirs $libs"
       ;;
     --bindir)
@@ -268,7 +262,6 @@ while test $# -gt 0; do
       echo "  --cmake-invoke        Print the BioDynaMo cmake invocation"
       echo "  --config              Print the cmake configuration options"
       echo "  --version             Print the BioDynaMo version"
-      echo "  --root-version        Print the version of ROOT used to build BioDynaMo"
       echo "  --ncpu                Print number of available (hyperthreaded) cores"
       echo "  --cxx                 Print alternative C++ compiler specified when BDM was built"
       echo "  --ld                  Print alternative Linker specified when BDM was built"

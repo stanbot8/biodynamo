@@ -10,6 +10,6 @@ export BDM_THISBDM_SILENT=true
 # We redirect to /dev/null to ignore the success message when we want to
 # extract output in CMake (e.g. in Installation.cmake we want to obtain the
 # version number).
-source @CMAKE_INSTALL_ROOT@/bin/thisbdm.sh
+source @CMAKE_INSTALL_ROOT@/bin/thisbdm.sh || exit $?
 
-$@
+exec "$@"

@@ -65,7 +65,7 @@ git checkout -b <new-branch>
 
 [edit the files]
 
-# clean the previous build but keep the third party libraries, typically ROOT and ParaView
+# clean the previous build
 cd build
 ninja cleanbuild
 
@@ -116,8 +116,7 @@ If you change the value of these switches, you might have to delete `CMakeCache.
 | Option     | Default Value | Description                                                                                                                    |
 | ---------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `test`     | `on`          | build the test executables; precondition for e.g. `valgrind` and `coverage`                                                    |
-| `dict`     | `on`          | build ROOT dictionaries. These are compulsory to use backups. Turning them off reduces compilation time.                       |
-| `paraview` | `on`          | Enable visualization using ParaView. Visualization cannot be used if this switch is turned off.                                |
+| `paraview` | `off`         | Enable visualization using an installed ParaView package.                                                                      |
 | `libgit2`  | `off`         | Enable automatic git tracking for executed simulations (e.g. last commits and `git diff` outputs; not available on `CentOS`.). |
 | `cuda`     | `off`         | enable CUDA code generation for GPU acceleration                                                                               |
 | `opencl`   | `off`         | enable OpenCL code generation for GPU acceleration                                                                             |
@@ -197,51 +196,21 @@ export C=/opt/local/bin/clang++-mp-8.0
 ./install.sh
 ```
 
-#### Use a Specific ROOT / ParaView Installation
+#### Use a Specific ParaView Installation
 
-When you want to inform BioDynaMo of a specific installation of ROOT and /or ParaView on your system,
-you will need to perform the following instructions prior to installation.
+Pass the installation prefix through CMake's standard package search path:
 
 ```bash
 git clone https://github.com/BioDynaMo/biodynamo.git
 cd biodynamo
-
-# For ROOT
-source <root_installation_dir>/bin/thisroot.sh
-
-# For ParaView
-export ParaView_DIR=<paraview_installation_dir>/lib/cmake/paraview-5.8
-export Qt5_DIR=<qt5_installation_dir>/lib/cmake/Qt5
-
-./install.sh
+cmake -S . -B build -Dparaview=ON \
+  -DCMAKE_PREFIX_PATH=<paraview-installation-prefix>
+cmake --build build --parallel
 ```
 
-<h4><b>Note</b></h4>
+Ubuntu's ParaView development package requires its public development
+dependencies when BioDynaMo builds the visualization plugin:
 
-If you specify `ParaView_DIR`, then you will need to provide also the `Qt5_DIR` variable as well.
-This is because ParaView implicitly relies on the Qt5 installation.
-
-
-#### Speed Up Installation Tests with a Local BioDynaMo-LFS Copy
-
-The installation scripts fetch large precompiled dependencies like ROOT or ParaView
-from biodynamo's large file storage (LFS). To enable faster builds you can download the whole
-LFS and tell BioDynaMo to access the local version instead. This is done with the
-environmental flag `BDM_LOCAL_LFS`. Use an absolute path to the directory
-that contains the local copy.
-
-``` bash
-export BDM_LOCAL_LFS=/path/to/local/lfs
+```bash
+sudo apt-get install paraview paraview-dev libdouble-conversion-dev libutfcpp-dev
 ```
-
-If you want to download the files from remote LFS again execute:
-
-``` bash
-unset BDM_LOCAL_LFS
-```
-
-
-<h4><b>Warning</b><h4>
-
-At the moment there is no check if the local copy is in synch with remote. 
-You have to ensure that yourself!

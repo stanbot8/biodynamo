@@ -13,7 +13,6 @@
 // -----------------------------------------------------------------------------
 
 #include "core/scheduler.h"
-#include <chrono>
 #include <iomanip>
 #include <string>
 #include <utility>
@@ -27,20 +26,11 @@
 #include "core/param/param.h"
 #include "core/resource_manager.h"
 #include "core/simulation.h"
-#include "core/simulation_backup.h"
 #include "core/util/log.h"
-#include "core/visualization/root/adaptor.h"
 
 namespace bdm {
 
 Scheduler::Scheduler() {
-  auto* param = Simulation::GetActive()->GetParam();
-  backup_ = new SimulationBackup(param->backup_file, param->restore_file);
-  if (backup_->RestoreEnabled()) {
-    restore_point_ = backup_->GetSimulationStepsFromBackup();
-  }
-  root_visualization_ = new RootAdaptor();
-
   // Operations are scheduled in the following order (sub categorated by their
   // operation implementation type, so that actual order may vary)
   std::vector<std::string> default_op_names = {
@@ -71,8 +61,8 @@ Scheduler::Scheduler() {
                          "update environment",
                          "tear down iteration"};
 
-  auto disabled_op_names =
-      Simulation::GetActive()->GetParam()->unschedule_default_operations;
+  auto* param = Simulation::GetActive()->GetParam();
+  auto disabled_op_names = param->unschedule_default_operations;
   if (!param->detect_static_agents) {
     disabled_op_names.push_back("propagate staticness");
     disabled_op_names.push_back("propagate staticness agentop");
@@ -122,22 +112,15 @@ Scheduler::~Scheduler() {
   for (auto* op : all_ops_) {
     delete op;
   }
-  delete backup_;
-  delete root_visualization_;
   delete progress_bar_;
 }
 
 void Scheduler::Simulate(uint64_t steps) {
-  if (Restore(&steps)) {
-    return;
-  }
-
   Initialize(steps);
   for (unsigned step = 0; step < steps; step++) {
     Execute();
     total_steps_++;
     UpdateSimulatedTime();
-    Backup();
   }
 }
 
@@ -371,8 +354,7 @@ void Scheduler::Execute() {
 void Scheduler::PrintInfo(std::ostream& out) const {
   out << "\n" << std::string(80, '-') << "\n\n";
   out << "Scheduler information:\n";
-  out << std::setw(80) << "frequency"
-      << "\n";
+  out << std::setw(80) << "frequency" << "\n";
   out << "Pre-scheduled operations:\n";
   // pre-scheduled ops
   for (auto* pre_op : pre_scheduled_ops_) {
@@ -415,37 +397,6 @@ void Scheduler::PrintInfo(std::ostream& out) const {
     }
   }
   out << "\n" << std::string(80, '-') << "\n";
-}
-
-void Scheduler::Backup() {
-  using std::chrono::duration_cast;
-  using std::chrono::seconds;
-  auto* param = Simulation::GetActive()->GetParam();
-  if (backup_->BackupEnabled() &&
-      duration_cast<seconds>(Clock::now() - last_backup_).count() >=
-          param->backup_interval) {
-    last_backup_ = Clock::now();
-    backup_->Backup(total_steps_);
-  }
-}
-
-/// Restore the simulation if requested at the right time
-/// @param steps number of simulation steps for a `Simulate` call
-/// @return if `Simulate` should return early
-bool Scheduler::Restore(uint64_t* steps) {
-  if (backup_->RestoreEnabled() && restore_point_ > total_steps_ + *steps) {
-    total_steps_ += *steps;
-    // restore requested, but not last backup was not done during this call to
-    // Simulate. Therefore, we skip it.
-    return true;
-  } else if (backup_->RestoreEnabled() && restore_point_ > total_steps_ &&
-             restore_point_ < total_steps_ + *steps) {
-    // Restore
-    backup_->Restore();
-    *steps = total_steps_ + *steps - restore_point_;
-    total_steps_ = restore_point_;
-  }
-  return false;
 }
 
 void Scheduler::UpdateSimulatedTime() {

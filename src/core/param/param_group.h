@@ -15,8 +15,9 @@
 #ifndef CORE_PARAM_PARAM_GROUP_H_
 #define CORE_PARAM_PARAM_GROUP_H_
 
+#include <atomic>
+#include <cstdint>
 #include <memory>
-#include "core/util/root.h"
 #include "cpptoml/cpptoml.h"
 
 namespace bdm {
@@ -56,7 +57,6 @@ struct ParamGroup {
 
  private:
   friend struct Param;
-  BDM_CLASS_DEF(ParamGroup, 1);
 };
 
 #define BDM_PARAM_GROUP_HEADER(name, version_id)                   \
@@ -65,9 +65,6 @@ struct ParamGroup {
   virtual ~name() {}                                               \
   ParamGroup* NewCopy() const override { return new name(*this); } \
   ParamGroupUid GetUid() const override { return kUid; }           \
-                                                                   \
- private:                                                          \
-  BDM_CLASS_DEF_OVERRIDE(name, version_id);                        \
                                                                    \
  public:
 

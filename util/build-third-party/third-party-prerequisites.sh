@@ -43,18 +43,6 @@ gpgkey=http://springdale.math.ias.edu/data/puias/7.6/x86_64/os/RPM-GPG-KEY-puias
 EOF'
     sudo yum update -y
 
-    #  root required packages
-    sudo yum install -y git binutils \
-      libX11-devel libXpm-devel libXft-devel libXext-devel
-    #  root optional packages
-    sudo yum install -y gcc-gfortran openssl-devel pcre-devel \
-      mesa-libGL-devel mesa-libGLU-devel glew-devel ftgl-devel mysql-devel \
-      fftw-devel cfitsio-devel graphviz-devel \
-      avahi-compat-libdns_sd-devel libldap-dev python-devel \
-      libxml2-devel gsl-static || true
-    sudo yum install -y atlas-devel
-    sudo yum install -y libXt-devel freeglut3-devel
-
     sudo yum install -y centos-release-scl epel-release
     sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm || true
     sudo yum install -y devtoolset-10-gcc*
@@ -85,18 +73,6 @@ EOF'
     CXX=g++
     # only for ubuntu image
     sudo apt-get -y install wget git make ninja-build
-    #  root required packages
-    sudo apt-get -y install git dpkg-dev g++ gcc binutils libx11-dev libxpm-dev \
-      libxft-dev libxext-dev
-    #  root optional packages
-    sudo apt-get -y install gfortran libssl-dev libpcre3-dev \
-      xlibmesa-glu-dev libglew1.5-dev libftgl-dev \
-      libmysqlclient-dev libfftw3-dev libcfitsio-dev \
-      graphviz-dev libavahi-compat-libdnssd-dev \
-      libldap2-dev python-dev libxml2-dev libkrb5-dev \
-      libgsl0-dev libqt4-dev || true
-    sudo apt install -y libatlas-base-dev
-
     # Install dependencies to install Python with PyEnv
     sudo apt-get install -y libssl-dev zlib1g-dev libbz2-dev \
       libreadline-dev libsqlite3-dev wget curl llvm \
@@ -109,8 +85,6 @@ EOF'
     else 
       sudo apt-get install -y python-openssl
     fi
-
-    sudo apt install -y libxt-dev freeglut3-dev
 
     # libroadrunner
     # Different versions of Ubuntu have different LLVM packages
@@ -126,7 +100,7 @@ EOF'
       export LLVM_CONFIG="/usr/bin/llvm-config-14"
     fi
   fi
-  # update cmake to build ROOT
+  # Use the CMake version required by the bundled third-party builds.
   URL="https://cmake.org/files/v3.19/cmake-3.19.3-Linux-x86_64.tar.gz"
   DownloadTarAndExtract $URL $WORKING_DIR/cmake-3.19.3 1
   export PATH=$WORKING_DIR/cmake-3.19.3/bin:$PATH
@@ -144,5 +118,5 @@ EOF'
 else
   xcode-select --install || true
   brew update --preinstall
-  brew install bash git cmake ninja swig python@3.9 libomp open-mpi git-lfs qt@5
+  brew install bash git cmake ninja swig python@3.9 libomp open-mpi git-lfs
 fi

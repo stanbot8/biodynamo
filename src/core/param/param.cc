@@ -12,23 +12,14 @@
 //
 // -----------------------------------------------------------------------------
 
-#include <TBufferJSON.h>
-#include <json.hpp>
-
 #include <utility>
 #include <vector>
 
-#include "core/multi_simulation/optimization_param.h"
 #include "core/param/param.h"
 #include "core/util/cpptoml.h"
 #include "core/util/log.h"
 
-using nlohmann::json;
-
 namespace bdm {
-
-const bdm::ParamGroupUid bdm::OptimizationParam::kUid =
-    bdm::ParamGroupUidGenerator::Get()->NewUid();
 
 std::unordered_map<ParamGroupUid, std::unique_ptr<ParamGroup>>
     Param::registered_groups_;
@@ -40,7 +31,6 @@ void Param::RegisterParamGroup(ParamGroup* param) {
 
 // -----------------------------------------------------------------------------
 Param::Param() {
-  RegisterParamGroup(new OptimizationParam());
   for (auto& el : registered_groups_) {
     groups_[el.first] = el.second->NewCopy();
   }
@@ -53,96 +43,11 @@ Param::~Param() {
   }
 }
 
-// -----------------------------------------------------------------------------
-void Param::Restore(Param&& other) {
-  for (auto& el : groups_) {
-    delete el.second;
-  }
-  *this = other;
-  other.groups_.clear();
-}
-
 Param::Param(const Param& other) {
   *this = other;
   for (auto el : other.groups_) {
     this->groups_[el.first] = el.second->NewCopy();
   }
-}
-
-// -----------------------------------------------------------------------------
-json FlattenGroups(const json& j_document) {
-  json j_copy = j_document;
-  j_copy.erase("groups_");
-
-  json j_new;
-  j_new["bdm::Param"] = j_copy;
-
-  // iterator over all group parameters
-  auto j_groups = j_document["groups_"];
-  for (json::iterator it = j_groups.begin(); it != j_groups.end(); ++it) {
-    j_new[(*it)["second"]["_typename"].get<std::string>()] = (*it)["second"];
-  }
-  return j_new;
-}
-
-// -----------------------------------------------------------------------------
-json UnflattenGroups(const json& j_flattened, const json& j_original) {
-  json j_return = j_flattened["bdm::Param"];
-  j_return["groups_"] = {};
-  auto& j_groups = j_return["groups_"];
-
-  auto j_original_groups = j_original["groups_"];
-  for (json::iterator it = j_original_groups.begin();
-       it != j_original_groups.end(); ++it) {
-    json j_param_group;
-    j_param_group["$pair"] = (*it)["$pair"];
-    j_param_group["first"] = (*it)["first"];
-    j_param_group["second"] =
-        j_flattened[(*it)["second"]["_typename"].get<std::string>()];
-    j_groups.push_back(j_param_group);
-  }
-  return j_return;
-}
-
-// -----------------------------------------------------------------------------
-std::string Param::ToJsonString() const {
-  // If you segfault here, try running the unit tests to find the root cause
-  std::string current_json_str(
-      TBufferJSON::ToJSON(this, TBufferJSON::kMapAsObject).Data());
-  // Flatten groups_ to simplify json patches in rfc7386 format.
-  try {
-    json j_document = json::parse(current_json_str);
-    auto j_flattened = FlattenGroups(j_document);
-    return j_flattened.dump(4);
-  } catch (std::exception& e) {
-    Log::Fatal("Param::ToJsonString",
-               Concat("Couldn't parse `Param` parameters.\n", e.what(), "\n",
-                      current_json_str));
-    return std::string();
-  }
-}
-
-// -----------------------------------------------------------------------------
-void Param::MergeJsonPatch(const std::string& patch) {
-  // If you segfault here, try running the unit tests to find the root cause
-  std::string json_str(
-      TBufferJSON::ToJSON(this, TBufferJSON::kMapAsObject).Data());
-  json j_param = json::parse(json_str);
-  auto j_flattened = FlattenGroups(j_param);
-
-  auto j_patch = json::parse(patch);
-  try {
-    j_flattened.merge_patch(j_patch);
-  } catch (std::exception& e) {
-    Log::Fatal("Param::MergeJsonPatch",
-               Concat("Couldn't merge the given json parameters.\n", e.what(),
-                      "\n", j_patch));
-  }
-
-  auto j_unflattened = UnflattenGroups(j_flattened, j_param);
-  Param* restored = nullptr;
-  TBufferJSON::FromJSON(restored, j_unflattened.dump().c_str());
-  Restore(std::move(*restored));
 }
 
 // -----------------------------------------------------------------------------
@@ -167,32 +72,6 @@ void AssignThreadSafetyMechanism(const std::shared_ptr<cpptoml::table>& config,
 }
 
 // -----------------------------------------------------------------------------
-void AssignMappedDataArrayMode(const std::shared_ptr<cpptoml::table>& config,
-                               Param* param) {
-  const std::string config_key = "performance.mapped_data_array_mode";
-  if (config->contains_qualified(config_key)) {
-    auto value = config->get_qualified_as<std::string>(config_key);
-    if (!value) {
-      return;
-    }
-    auto str_value = *value;
-    if (str_value == "zero-copy") {
-      param->mapped_data_array_mode = Param::MappedDataArrayMode::kZeroCopy;
-    } else if (str_value == "cache") {
-      param->mapped_data_array_mode = Param::MappedDataArrayMode::kCache;
-    } else if (str_value == "copy") {
-      param->mapped_data_array_mode = Param::MappedDataArrayMode::kCopy;
-    } else {
-      Log::Fatal(
-          "Param",
-          Concat(
-              "Parameter mapped_data_array_mode was set to an invalid value (",
-              str_value, ")."));
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 void AssignBoundSpaceMode(const std::shared_ptr<cpptoml::table>& config,
                           Param* param) {
   const std::string config_key = "simulation.bound_space";
@@ -203,11 +82,11 @@ void AssignBoundSpaceMode(const std::shared_ptr<cpptoml::table>& config,
     }
     auto str_value = *value;
     if (str_value == "open") {
-      param->mapped_data_array_mode = Param::MappedDataArrayMode::kZeroCopy;
+      param->bound_space = Param::BoundSpaceMode::kOpen;
     } else if (str_value == "closed") {
-      param->mapped_data_array_mode = Param::MappedDataArrayMode::kCache;
+      param->bound_space = Param::BoundSpaceMode::kClosed;
     } else if (str_value == "torus") {
-      param->mapped_data_array_mode = Param::MappedDataArrayMode::kCopy;
+      param->bound_space = Param::BoundSpaceMode::kTorus;
     } else {
       Log::Fatal("Param",
                  Concat("Parameter bound_space was set to an invalid value (",
@@ -229,9 +108,6 @@ void Param::AssignFromConfig(const std::shared_ptr<cpptoml::table>& config) {
   BDM_ASSIGN_CONFIG_VALUE(environment, "simulation.environment");
   BDM_ASSIGN_CONFIG_VALUE(nanoflann_depth, "simulation.nanoflann_depth");
   BDM_ASSIGN_CONFIG_VALUE(unibn_bucketsize, "simulation.unibn_bucketsize");
-  BDM_ASSIGN_CONFIG_VALUE(backup_file, "simulation.backup_file");
-  BDM_ASSIGN_CONFIG_VALUE(restore_file, "simulation.restore_file");
-  BDM_ASSIGN_CONFIG_VALUE(backup_interval, "simulation.backup_interval");
   BDM_ASSIGN_CONFIG_VALUE(simulation_time_step, "simulation.time_step");
   BDM_ASSIGN_CONFIG_VALUE(simulation_max_displacement,
                           "simulation.max_displacement");
@@ -252,7 +128,6 @@ void Param::AssignFromConfig(const std::shared_ptr<cpptoml::table>& config) {
                           "visualization.pv_insitu_pipeline");
   BDM_ASSIGN_CONFIG_VALUE(pv_insitu_pipelinearguments,
                           "visualization.pv_insitu_pipelinearguments");
-  BDM_ASSIGN_CONFIG_VALUE(root_visualization, "visualization.root");
   BDM_ASSIGN_CONFIG_VALUE(export_visualization, "visualization.export");
   BDM_ASSIGN_CONFIG_VALUE(visualization_interval, "visualization.interval");
   BDM_ASSIGN_CONFIG_VALUE(visualization_export_generate_pvsm,
@@ -350,8 +225,6 @@ void Param::AssignFromConfig(const std::shared_ptr<cpptoml::table>& config) {
                           "performance.mem_mgr_max_mem_per_thread_factor");
   BDM_ASSIGN_CONFIG_VALUE(minimize_memory_while_rebalancing,
                           "performance.minimize_memory_while_rebalancing");
-  AssignMappedDataArrayMode(config, this);
-
   // development group
   BDM_ASSIGN_CONFIG_VALUE(statistics, "development.statistics");
   BDM_ASSIGN_CONFIG_VALUE(debug_numa, "development.debug_numa");

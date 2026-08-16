@@ -17,7 +17,7 @@
 #
 #   $1 the directory containing the CMake simulation code
 function run_cmake_simulation() {
-  # Create a temporary file on your system referenced by log 
+  # Create a temporary file on your system referenced by log
   log=$(mktemp)
   # Set trap, e.g. whenever the scirpt returns, we delete the temporary file
   trap "rm -rf \"${log}\"" RETURN
@@ -38,7 +38,7 @@ function run_cmake_simulation() {
   # the `biodynamo test` command
   if [ "$ISTEST" = "true" ]; then
     # The scheduled GHA are usually configured with -Dtest=off in which case there
-    # will not be a test executable. The following checks if a test executable 
+    # will not be a test executable. The following checks if a test executable
     # was built, if not it does not test the test command.
     if [ -f "build/test-sim-test" ]; then
       echo "GHA tests the 'bdm test' command."
@@ -53,7 +53,7 @@ function run_cmake_simulation() {
     fi
   fi
 
-  # return to original dictionary
+  # return to original directory
   popd
 
   # Check if run and test commands were successful
@@ -61,12 +61,12 @@ function run_cmake_simulation() {
     echo -n "Faild with return value ${SIM_RET_VAL}. The three digits "
     echo -n "correspond to:\nSimulation return value, ctest return value, test"
     echo " results."
-    return 1 
+    return 1
   elif [ "${SIM_RET_VAL}" != "0" ]; then
     return $SIM_RET_VAL
   fi
 
-  # If commands were successful, we further check if the output of the 
+  # If commands were successful, we further check if the output of the
   # simulation is correct.
   expected="Simulation completed successfully!"
   grep --quiet "${expected}" "${log}"

@@ -22,24 +22,15 @@ BDM_CONFIG=bdm-config $(BUILD_TYPE)
 CXXFLAGS=`$(BDM_CONFIG) --cxxflags`
 LINKFLAGS=`$(BDM_CONFIG) --ldflags --libs`
 
-HEADER=src/makefile_project.h
-
 all: makefile_project
 
-# BioDynaMo generate code: pass all headers that contain BioDynaMo code to the
-# code generator
-bdm_generated_code.cc: $(HEADER)
-	bdm-code-generation $@ "$(BDM_CONFIG)" -i "$(pwd)/src" -h $?
-
 # Compile all source files
-bdm_generated_code.o: bdm_generated_code.cc
-	$(CXX) $(CXXFLAGS) -c $?
 makefile_project.o: src/makefile_project.cc
 	$(CXX) $(CXXFLAGS) -c $?
 
 # Generate binary (link object files and libraries)
-makefile_project: bdm_generated_code.o makefile_project.o
+makefile_project: makefile_project.o
 	$(CXX) $? -o $@ $(LINKFLAGS)
 
 clean:
-	rm -rf *o bdm_generated_code.cc *_rdict.pcm makefile_project
+	rm -f *.o makefile_project

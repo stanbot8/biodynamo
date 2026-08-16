@@ -234,8 +234,6 @@ Requirements to build on macOS are:
  * **cmake**: Set of tools for automate building, testing of software
  * **ninja**: Ninja is a small build system with a focus on speed
  * **bash**: Recent version of bash shell
- * **tbb**: Rich and complete approach to parallelism in C++ (needed by ROOT on Apple M1)
- * **qt@5**: Library used by ParaView
 
 ### Optional Packages
 
@@ -244,6 +242,7 @@ Requirements to build on macOS are:
  * **kcov**: Code coverage testing tool
  * **gsl**: GNU Scientific Library (GSL) -- development package  
  * **libgit2**: C library for git 
+ * **paraview**: Scientific visualization and in situ analysis
 
 ### Installation
 
@@ -251,12 +250,11 @@ Requirements to build on macOS are:
 
 ```bash
 brew update; brew upgrade
-brew install libomp open-mpi python@3.9 wget cmake ninja bash tbb qt@5
+brew install libomp open-mpi python@3.9 wget cmake ninja bash
 ```
 
 #### Optional Packages
 
 ```bash
-brew install doxygen graphviz kcov gsl libgit2
-python3 -m pip install markupsafe==2.0.1 nbformat jupyter metakernel jupyterlab jinja2==3.0
+brew install doxygen graphviz kcov gsl libgit2 paraview
 ```

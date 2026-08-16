@@ -13,10 +13,7 @@
 // -----------------------------------------------------------------------------
 
 #include "core/param/command_line_options.h"
-#include <TEnv.h>
 #include <utility>
-#include "core/param/param.h"
-#include "core/util/io.h"
 #include "core/util/log.h"
 
 namespace bdm {
@@ -32,13 +29,6 @@ CommandLineOptions::CommandLineOptions(int argc, const char** argv)
   ExtractSimulationName(argv[0]);
 }
 
-CommandLineOptions::~CommandLineOptions() {
-  if (parser_) {
-    delete parser_;
-    parser_ = nullptr;
-  }
-}
-
 cxxopts::OptionAdder CommandLineOptions::AddOption(string group) {
   if (parser_ != nullptr) {
     Log::Fatal("CommandLineOptions::AddOption",
@@ -52,24 +42,26 @@ std::string CommandLineOptions::GetSimulationName() const { return sim_name_; }
 
 /// Parse the given command line arguments
 void CommandLineOptions::Parse() {
-  // Make a non-const deep copy of argv
-  char** argv_copy = (char**)malloc((argc_ + 1) * sizeof(char*));
-  int argc_copy = argc_;
+  std::vector<std::string> arguments;
+  arguments.reserve(argc_);
   for (int i = 0; i < argc_; ++i) {
-    size_t length = strlen(argv_[i]) + 1;
-    argv_copy[i] = (char*)malloc(length);
-    memcpy(argv_copy[i], argv_[i], length);
+    arguments.emplace_back(argv_[i]);
   }
-  argv_copy[argc_] = nullptr;
 
-  // Perform parsing (consumes argc_copy and argv_copy)
-  if (parser_) {
-    delete parser_;
-    parser_ = nullptr;
+  std::vector<char*> argument_pointers;
+  argument_pointers.reserve(arguments.size() + 1);
+  for (auto& argument : arguments) {
+    argument_pointers.push_back(argument.data());
   }
+  argument_pointers.push_back(nullptr);
+
+  int argc_copy = argc_;
+  char** argv_copy = argument_pointers.data();
+  parser_.reset();
 
   try {
-    parser_ = new cxxopts::ParseResult(options_.parse(argc_copy, argv_copy));
+    parser_ = std::make_unique<cxxopts::ParseResult>(
+        options_.parse(argc_copy, argv_copy));
   } catch (const cxxopts::option_not_exists_exception& option) {
     Log::Fatal("CommandLineOptions::ParseResult", option.what(),
                " Perhaps you are constructing multiple Simulation objects with "
@@ -81,12 +73,6 @@ void CommandLineOptions::Parse() {
     HandleCoreOptions();
     first_parse_ = false;
   }
-
-  // free memory
-  for (int i = 0; i < argc_; ++i) {
-    free(argv_copy[i]);
-  }
-  free(argv_copy);
 }
 
 bool CommandLineOptions::IsSet(std::string option) {
@@ -107,14 +93,7 @@ void CommandLineOptions::AddCoreOptions() {
     ("vis-frequency", "Set the frequency of exporting the visualization.", value<uint32_t>()->default_value("10"), "FREQ")
     ("v, verbose", "Verbose mode. Causes BioDynaMo to print debugging messages. Multiple "
       "-v options increases the verbosity. The maximum is 3.", value<bool>())
-    ("r, restore", "Restores the simulation from the checkpoint found in FILE and "
-      "continues simulation from that point.", value<string>()->default_value(""), "FILE")
-    ("b, backup", "Periodically create full simulation backup to the specified file. "
-      "NOTA BENE: File will be overridden if it exists.", value<string>()->default_value(""), "FILE")
-    ("c, config", "The TOML or JSON configuration that should be used. The JSON file must be in JSON merge patch format (https://tools.ietf.org/html/rfc7386). This option can be used multiple times.", value<std::vector<string>>()->default_value(""), "FILE")
-    ("inline-config", "JSON configuration string passed directly on the command line. Overwrites values specified in config file.  The JSON string must be in JSON merge patch format (https://tools.ietf.org/html/rfc7386). This option can be used multiple times.", value<std::vector<string>>()->default_value(""), "JSON_STRING")
-    ("output-default-json", "Prints a JSON string with all parameters and their default values and exits.")
-    ("toml-to-json", "Converts a TOML file to a JSON patch. After printing the JSON patch the application will exit.", value<string>()->default_value(""), "TOML_FILE");
+    ("c, config", "The TOML configuration that should be used. This option can be used multiple times.", value<std::vector<string>>()->default_value(""), "FILE");
 }
 // clang-format on
 
@@ -143,69 +122,19 @@ void CommandLineOptions::HandleCoreOptions() {
     exit(0);
   }
 
-  // Handle "verbose" argument
-  // If set in etc/bdm.rootrc use that value, command line argument will
-  // override it
-  Int_t ll = kWarning;
-  TString slevel = "Warning";
-  TEnvRec* rec = gEnv->Lookup("Root.ErrorIgnoreLevel");
-  if (rec) {
-    if (rec->GetLevel() == kEnvUser)
-      slevel = rec->GetValue();
-  }
-  if (!slevel.CompareTo("Print", TString::kIgnoreCase))
-    ll = kPrint;
-  else if (!slevel.CompareTo("Info", TString::kIgnoreCase))
-    ll = kInfo;
-  else if (!slevel.CompareTo("Warning", TString::kIgnoreCase))
-    ll = kWarning;
-  else if (!slevel.CompareTo("Error", TString::kIgnoreCase))
-    ll = kError;
-
   if (IsSet("verbose")) {
     auto verbosity = parser_->count("verbose");
-
     switch (verbosity) {
-      // case 0 can never occur; we wouldn't go into this if statement
       case 1:
-        ll = kWarning;
+        Log::SetLevel(Log::Level::kWarning);
         break;
       case 2:
-        ll = kInfo;
-        break;
-      case 3:
-        ll = kPrint;
+        Log::SetLevel(Log::Level::kInfo);
         break;
       default:
-        ll = kPrint;
+        Log::SetLevel(Log::Level::kDebug);
         break;
     }
-  }
-  // Global variable of ROOT that determines verbosity of logging functions
-  gErrorIgnoreLevel = ll;
-
-  if (parser_->count("output-default-json")) {
-    Param param;
-    std::cout << "Below you can find a JSON string with all available "
-                 "parameters and their default values.\n"
-              << "Have a look at https://biodynamo.org/bioapi/ for more "
-                 "details about each parameter."
-              << std::endl;
-    std::cout << param.ToJsonString() << std::endl;
-    exit(0);
-  }
-
-  auto toml_file = (*parser_)["toml-to-json"].as<std::string>();
-  if (toml_file != "") {
-    if (!FileExists(toml_file)) {
-      Log::Fatal("CommandLineOptions::HandleCoreOptions",
-                 "Specified TOML file (", toml_file, ") does not exist.");
-    }
-    auto toml = cpptoml::parse_file(toml_file);
-    Param param;
-    param.AssignFromConfig(toml);
-    std::cout << param.ToJsonString() << std::endl;
-    exit(0);
   }
 }
 

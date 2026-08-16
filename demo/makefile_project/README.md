@@ -14,8 +14,6 @@ If everything was successful, the final output should be:
 Simulation completed successfully!
 
 
-The solution uses two helper scripts `bdm-config` and `bdm-code-generation`.
+The solution uses the `bdm-config` helper script.
 `bdm-config` provides the compiler and linker options that are required to build
 the simulation.
-`bdm-code-generation` is performing the code generation step that is usually
-taken care of by CMake. BioDynaMo relies on code generation to support reflection.
