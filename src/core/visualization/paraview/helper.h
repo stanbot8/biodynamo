@@ -23,8 +23,6 @@
 #include "core/visualization/paraview/vtk_agents.h"
 #include "core/visualization/paraview/vtk_diffusion_grid.h"
 
-class TClass;
-
 namespace bdm {
 
 static constexpr char const* kSimulationInfoJson = "simulation_info.json";

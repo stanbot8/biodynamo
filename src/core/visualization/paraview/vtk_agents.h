@@ -25,8 +25,6 @@
 #include "core/agent/agent.h"
 #include "core/shape.h"
 
-class TClass;
-
 namespace bdm {
 
 class ParaviewAdaptorTest_GenerateSimulationInfoJson_Test;
@@ -41,21 +39,20 @@ class VtkAgents {
 
   vtkUnstructuredGrid* GetData(uint64_t idx);
   Shape GetShape() const;
-  TClass* GetTClass();
+  const std::string& GetTypeName() const;
   void Update(const std::vector<Agent*>* agents);
   void WriteToFile(uint64_t step) const;
 
  private:
   std::string name_;
-  TClass* tclass_;
   std::vector<vtkUnstructuredGrid*> data_;
-  Shape shape_;
+  std::vector<std::string> data_members_;
+  Shape shape_ = Shape::kSphere;
+  bool metadata_initialized_ = false;
 
-  TClass* FindTClass();
-  void InitializeDataMembers(const Agent* agent,
-                             std::vector<std::string>* data_members) const;
-  void UpdateMappedDataArrays(uint64_t tid, const std::vector<Agent*>* agents,
-                              uint64_t start, uint64_t end);
+  void InitializeMetadata(const Agent& agent);
+  void UpdateGrid(uint64_t tid, const std::vector<Agent*>* agents,
+                  uint64_t start, uint64_t end);
 
   friend class ParaviewAdaptorTest_GenerateSimulationInfoJson_Test;
 };
