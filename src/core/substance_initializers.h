@@ -18,9 +18,8 @@
 #include <stdexcept>
 #include <vector>
 
-#include "Math/DistFunc.h"
-
 #include "core/diffusion/diffusion_grid.h"
+#include "core/util/math.h"
 
 namespace bdm {
 
@@ -77,8 +76,7 @@ class Uniform {
 };
 
 /// An initializer that follows a Gaussian (normal) distribution along one axis
-/// We use ROOT's built-in statistics function `normal_pdf(X, sigma, mean)`,
-/// that follows the normal probability density function:
+/// This initializer follows the normal probability density function:
 /// ( 1/( sigma * sqrt(2*pi) ))*e^( (-(x - mean )^2) / (2*sigma^2))
 class GaussianBand {
  public:
@@ -108,11 +106,11 @@ class GaussianBand {
   real_t operator()(real_t x, real_t y, real_t z) {
     switch (axis_) {
       case Axis::kXAxis:
-        return scaling_ * ROOT::Math::normal_pdf(x, sigma_, mean_);
+        return scaling_ * Math::NormalPdf(x, sigma_, mean_);
       case Axis::kYAxis:
-        return scaling_ * ROOT::Math::normal_pdf(y, sigma_, mean_);
+        return scaling_ * Math::NormalPdf(y, sigma_, mean_);
       case Axis::kZAxis: {
-        return scaling_ * ROOT::Math::normal_pdf(z, sigma_, mean_);
+        return scaling_ * Math::NormalPdf(z, sigma_, mean_);
       }
       default:
         throw std::logic_error("You have chosen an non-existing axis!");
@@ -126,9 +124,8 @@ class GaussianBand {
   uint8_t axis_;
 };
 
-/// An initializer that follows a Poisson (normal) distribution along one axis
-/// The function ROOT::Math::poisson_pdfd(X, lambda) follows the normal
-/// probability density function:
+/// An initializer that follows a Poisson distribution along one axis.
+/// The Poisson probability mass function is:
 /// {e^( - lambda ) * lambda ^x )} / x!
 class PoissonBand {
  public:
@@ -153,11 +150,11 @@ class PoissonBand {
   real_t operator()(real_t x, real_t y, real_t z) {
     switch (axis_) {
       case Axis::kXAxis:
-        return ROOT::Math::poisson_pdf(x, lambda_);
+        return Math::PoissonPmf(static_cast<uint64_t>(x), lambda_);
       case Axis::kYAxis:
-        return ROOT::Math::poisson_pdf(y, lambda_);
+        return Math::PoissonPmf(static_cast<uint64_t>(y), lambda_);
       case Axis::kZAxis:
-        return ROOT::Math::poisson_pdf(z, lambda_);
+        return Math::PoissonPmf(static_cast<uint64_t>(z), lambda_);
       default:
         throw std::logic_error("You have chosen an non-existing axis!");
     }

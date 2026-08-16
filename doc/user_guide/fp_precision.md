@@ -13,7 +13,7 @@ BioDynaMo can be compiled with different floating point precisions.
 Currently, single-precision (`float`) and double-precision (`double`) are supported.
 By default, BioDynaMo is compiled with double-precision.
 
-Reduced floating-point precision reduces the required main memory, the file size of simulation backups, and might reduce the simulation runtime.
+Reduced floating-point precision reduces the required main memory and stored numerical data, and can reduce the simulation runtime.
  
 You can print the used precision with:
 
