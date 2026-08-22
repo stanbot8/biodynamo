@@ -19,7 +19,6 @@
 #include "core/execution_context/in_place_exec_ctxt.h"
 #include "core/model_initializer.h"
 #include "core/operation/operation_registry.h"
-#include "core/randomized_rm.h"  // for bdm::Ubrng
 #include "unit/test_util/test_agent.h"
 #include "unit/test_util/test_util.h"
 
@@ -76,7 +75,7 @@ void RunRemoveAgentMultithreadingTest(const char* name, uint64_t num_removed) {
     uids[i] = AgentUid(i);
   }
   auto* random = sim.GetRandom();
-  std::shuffle(uids.begin(), uids.end(), Ubrng(random));
+  std::shuffle(uids.begin(), uids.end(), *random);
 
 #pragma omp parallel for
   for (uint64_t i = 0; i < num_removed; ++i) {

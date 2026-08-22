@@ -16,6 +16,7 @@
 #define CORE_CONTAINER_MATH_ARRAY_H_
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <numeric>
@@ -36,38 +37,31 @@ template <class T, std::size_t N>
 class MathArray {  // NOLINT
  public:
   /// Default constructor
-  MathArray() {
-#pragma omp simd
-    for (size_t i = 0; i < N; i++) {
-      data_[i] = T();
-    }
-  }
+  MathArray() = default;
 
   /// Constructor which accepts an std::initializer_list to set
   /// the array's content.
   /// \param l an initializer list
-  constexpr MathArray(std::initializer_list<T> l) {
-    assert(l.size() <= N);
-    auto it = l.begin();
-    for (uint64_t i = 0; i < N; i++) {
-      data_[i] = *(it++);
+  MathArray(std::initializer_list<T> l) {
+    if (l.size() > N) {
+      throw std::length_error("MathArray initializer exceeds its capacity");
     }
-    for (uint64_t i = l.size(); i < N; i++) {
-      data_[i] = T();
-    }
+    std::copy(l.begin(), l.end(), data_.begin());
   }
 
   /// Return a pointer to the underlying data.
   /// \return cont T pointer to the first entry of the array.
-  inline const T* data() const { return &data_[0]; }  // NOLINT
+  inline T* data() { return data_.data(); }  // NOLINT
+
+  inline const T* data() const { return data_.data(); }  // NOLINT
 
   /// Return the size of the array.
   /// \return integer denoting the array's size.
-  inline const size_t size() const { return N; }  // NOLINT
+  inline size_t size() const { return data_.size(); }  // NOLINT
 
   /// Check if the array is empty.
   /// \return true if size() == 0, false otherwise.
-  inline const bool empty() const { return N == 0; }  // NOLINT
+  inline bool empty() const { return data_.empty(); }  // NOLINT
 
   /// Overloaded array subscript operator. It does not perform
   /// any boundary checks.
@@ -85,58 +79,36 @@ class MathArray {  // NOLINT
   /// of the array's boundaries.
   /// \param idx the index of the element.
   /// \return the requested element.
-  T& at(size_t idx) noexcept(false) {  // NOLINT
-    if (idx > size() || idx < 0) {
-      throw std::out_of_range("The index is out of range");
-    }
-    return data_[idx];
-  }
+  T& at(size_t idx) { return data_.at(idx); }  // NOLINT
 
-  const T* begin() const { return &(data_[0]); }  // NOLINT
+  const T& at(size_t idx) const { return data_.at(idx); }  // NOLINT
 
-  const T* end() const { return &(data_[N]); }  // NOLINT
+  const T* begin() const { return data_.begin(); }  // NOLINT
 
-  T* begin() { return &(data_[0]); }  // NOLINT
+  const T* end() const { return data_.end(); }  // NOLINT
 
-  T* end() { return &(data_[N]); }  // NOLINT
+  T* begin() { return data_.begin(); }  // NOLINT
+
+  T* end() { return data_.end(); }  // NOLINT
 
   /// Returns the element at the beginning of the array.
   /// \return first element.
-  T& front() { return *(this->begin()); }  // NOLINT
+  T& front() { return data_.front(); }  // NOLINT
+
+  const T& front() const { return data_.front(); }  // NOLINT
 
   /// Return the element at the end of the array.
   /// \return last element.
-  T& back() {  // NOLINT
-    auto tmp = this->end();
-    tmp--;
-    return *tmp;
-  }
+  T& back() { return data_.back(); }  // NOLINT
 
-  /// Assignment operator.
-  /// \param other the other MathArray instance.
-  /// \return the current MathArray.
-  MathArray& operator=(const MathArray& other) {
-    if (this != &other) {
-      assert(other.size() == N);
-      std::copy(other.data_, other.data_ + other.size(), data_);
-    }
-    return *this;
-  }
+  const T& back() const { return data_.back(); }  // NOLINT
+
+  MathArray& operator=(const MathArray& other) = default;
 
   /// Equality operator.
   /// \param other a MathArray instance.
   /// \return true if they have the same content, false otherwise.
-  bool operator==(const MathArray& other) const {
-    if (other.size() != N) {
-      return false;
-    }
-    for (size_t i = 0; i < N; i++) {
-      if (other[i] != data_[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
+  bool operator==(const MathArray& other) const { return data_ == other.data_; }
 
   bool operator!=(const MathArray& other) const { return !operator==(other); }
 
@@ -329,13 +301,13 @@ class MathArray {  // NOLINT
   /// \param k the constant value
   /// \return the array
   MathArray& fill(const T& k) {  // NOLINT
-    std::fill(std::begin(data_), std::end(data_), k);
+    data_.fill(k);
     return *this;
   }
 
   /// Return the sum of all the array's elements.
   /// \return sum of the array's content.
-  T Sum() const { return std::accumulate(begin(), end(), 0); }
+  T Sum() const { return std::accumulate(begin(), end(), T{}); }
 
   /// Checks if vector is a zero vector, e.g. if all entries are zero.
   bool IsZero() const {
@@ -404,8 +376,7 @@ class MathArray {  // NOLINT
   }
 
  private:
-  T data_[N];
-  BDM_CLASS_DEF_NV(MathArray, 1);  // NOLINT
+  std::array<T, N> data_{};
 };
 
 template <class T, std::size_t N>

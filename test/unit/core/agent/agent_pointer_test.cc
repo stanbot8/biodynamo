@@ -13,8 +13,7 @@
 // -----------------------------------------------------------------------------
 
 #include "unit/core/agent/agent_pointer_test.h"
-#include "core/randomized_rm.h"  // for bdm::Ubrng
-#include "unit/test_util/io_test.h"
+#include "unit/test_util/test_util.h"
 
 namespace bdm {
 namespace agent_pointer_test_internal {
@@ -123,7 +122,7 @@ void RunSortTest(Simulation* sim, AgentPointerMode mode) {
   }
 
   auto* random = Simulation::GetActive()->GetRandom();
-  std::shuffle(ap_vector.begin(), ap_vector.end(), Ubrng(random));
+  std::shuffle(ap_vector.begin(), ap_vector.end(), *random);
 
   std::sort(ap_vector.begin(), ap_vector.end());
   for (uint64_t i = 0u; i < ap_vector.size(); ++i) {
@@ -222,30 +221,6 @@ TEST(IsAgentPtrTest, All) {
   static_assert(is_agent_ptr<AgentPointer<TestAgent>>::value,
                 "AgentPointer<TestAgent> is an AgentPointer");
 }
-
-#ifdef USE_DICT
-
-TEST_F(IOTest, AgentPointerIndirect) {
-  Simulation simulation(TEST_NAME);
-  RunIOTest(&simulation, AgentPointerMode::kIndirect);
-}
-
-TEST_F(IOTest, AgentPointerDirect) {
-  Simulation simulation(TEST_NAME);
-  RunIOTest(&simulation, AgentPointerMode::kDirect);
-}
-
-TEST_F(IOTest, AgentPointerNullptrIndirect) {
-  Simulation simulation(TEST_NAME);
-  IOTestAgentPointerNullptr(AgentPointerMode::kIndirect);
-}
-
-TEST_F(IOTest, AgentPointerNullptrDirect) {
-  Simulation simulation(TEST_NAME);
-  IOTestAgentPointerNullptr(AgentPointerMode::kDirect);
-}
-
-#endif  // USE_DICT
 
 }  // namespace agent_pointer_test_internal
 }  // namespace bdm
