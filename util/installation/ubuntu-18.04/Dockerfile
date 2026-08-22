@@ -14,11 +14,9 @@
 
 FROM ubuntu:18.04
 
-# man required by ROOT
 RUN apt-get update && apt-get install -y \
   git \
   sudo \
-  man \
   software-properties-common \
   wget \
   xvfb

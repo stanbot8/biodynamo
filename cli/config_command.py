@@ -56,7 +56,6 @@ def ConfigCommand():
         "cxx": "Alternative C++ compiler specified when BDM was built",
         "ld": "Alternative Linker specified when BDM was built",
         "cmake-invoke": "The BioDynaMo cmake invocation",
-        "root-version": "The version of ROOT used to build BioDynaMo",
     }
 
     # 1. Get path to bdm-config
@@ -65,7 +64,6 @@ def ConfigCommand():
     # 2. Extract all information via bdm-config
     arguments = [
         "version",
-        "root-version",
         "cxxflags",
         "cxxincludes",
         "ldflags",

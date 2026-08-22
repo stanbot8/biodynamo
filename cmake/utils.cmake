@@ -51,86 +51,6 @@ function(detect_os)
     endif()
 endfunction()
 
-# Try to find the ROOT package. It is an hard requirement
-# for the project. If ROOT is not found on the system, it
-# will be downloaded. If the found cached ROOT is not the right
-# version (SHA256 check with builtin expected SHA256) then
-# a new version will be downloaded.
-# If a user installed ROOT is found we will check if ROOT
-# was compiled using c++17.
-function(verify_ROOT)
-    if(ROOT_FOUND AND CMAKE_THIRD_PARTY_DIR)
-        # check if found ROOT is BDM installed (matchres > -1)
-        string(FIND ${ROOT_INCLUDE_DIRS} ${CMAKE_THIRD_PARTY_DIR} matchres)
-        if (${matchres} GREATER -1)
-            # check SHA256 of ROOT to see if it matches currently supported ROOT
-            if (IS_DIRECTORY ${CMAKE_THIRD_PARTY_DIR}/root)
-                if (EXISTS ${CMAKE_THIRD_PARTY_DIR}/root/tar-sha256)
-                    # check if SHA256 of installed ROOT is the same as the expected one
-                    file(READ ${CMAKE_THIRD_PARTY_DIR}/root/tar-sha256 TAR_SHA256)
-                    if(APPLE)
-                        execute_process(COMMAND bash "-c" "xcodebuild -version | sed -En 's/Xcode[[:space:]]+([0-9\.]*)/\\1/p' | tr -d '\\n'" OUTPUT_VARIABLE XCODE_VERS)
-                        set(ROOT_SHA_KEY osx-xcode-${XCODE_VERS}-${DETECTED_ARCH}-ROOT)
-                    else()
-                        set(ROOT_SHA_KEY ${DETECTED_OS_VERS}-ROOT)
-                    endif()
-                    set(ROOT_SHA ${${ROOT_SHA_KEY}})
-                    if(NOT "${TAR_SHA256}" STREQUAL "${ROOT_SHA}")
-                        # BDM installed ROOT has wrong SHA256... deleting it
-                        message(WARNING "The found ROOT version is not compatible... deleting it...")
-                        file(REMOVE_RECURSE ${CMAKE_THIRD_PARTY_DIR}/root)
-                        unset(ROOT_FOUND)
-                    else()
-                        message(STATUS "Found a compatible ROOT version in ${CMAKE_THIRD_PARTY_DIR}/root")
-                    endif()
-                else()
-                    # BDM installed ROOT exists but no SHA256 file... deleting it
-                    message(WARNING "The found ROOT version cannot be determined... deleting it...")
-                    file(REMOVE_RECURSE ${CMAKE_THIRD_PARTY_DIR}/root)
-                    unset(ROOT_FOUND)
-                endif()
-            endif()
-        endif()
-    endif()
-    if(NOT ROOT_FOUND)
-        print_warning()
-        message("We did not find any ROOT installed on the system. We will proceed to download it. "
-        "ROOT will be installed in the location ${CMAKE_THIRD_PARTY_DIR}/root.")
-        print_line()
-        include(external/ROOT)
-
-        # Propagate the needed variables to the parent
-        SET(ROOT_FOUND ${ROOT_FOUND} PARENT_SCOPE)
-        SET(ROOT_VERSION ${ROOT_VERSION} PARENT_SCOPE)
-        SET(ROOT_LIBRARIES ${ROOT_LIBRARIES} PARENT_SCOPE)
-        SET(ROOT_LIBRARY_DIR ${ROOT_LIBRARY_DIR} PARENT_SCOPE)
-        SET(ROOT_INCLUDE_DIRS ${ROOT_INCLUDE_DIRS} PARENT_SCOPE)
-        SET(ROOT_ETC_DIR ${ROOT_ETC_DIR} PARENT_SCOPE)
-        SET(ROOT_CONFIG_EXECUTABLE ${ROOT_CONFIG_EXECUTABLE} PARENT_SCOPE)
-        SET(ROOTCLING_EXECUTABLE ${ROOTCLING_EXECUTABLE} PARENT_SCOPE)
-        SET(GENREFLEX_EXECUTABLE ${GENREFLEX_EXECUTABLE} PARENT_SCOPE)
-    else()
-        # When ROOT is found, but it's not C++17 compliant, we exit the installation, because ROOT needs
-        # to be properly sourced prior to invoking CMake (CMake cannot do this for us, because it requires
-        # reverting the previous find_package() call, which is not possible.)
-        if(NOT ROOT_cxx17_FOUND)
-          message(FATAL_ERROR "The ROOT installation found in ${ROOTSYS} is not C++17 compliant. "
-            "Please unset ROOTSYS and re-run cmake so that a compatible version of ROOT will be downloaded.")
-        endif()
-
-        if (NOT DEFINED ROOTSYS OR NOT DEFINED ${ROOTSYS})
-          # Set ROOTSYS variable
-          string(REGEX REPLACE "/include$" "" TMP_ROOT_PATH ${ROOT_INCLUDE_DIRS})
-          set(ENV{ROOTSYS} ${TMP_ROOT_PATH})
-        endif()
-    endif()
-
-    # ROOT must be 6.22 or newer
-    if("${ROOT_VERSION}" VERSION_LESS "6.22/00")
-      message(FATAL_ERROR "The ROOT version must be 6.22 or newer, current version is ${ROOT_VERSION}")
-    endif()
-endfunction()
-
 # Convert a list to a better representation
 # https://stackoverflow.com/questions/17666003/cmake-output-a-list-with-delimiters
 function (ListToString result delim)
@@ -246,23 +166,9 @@ function(install_inside_build)
             GLOB "*" ".*"
             )
 
-    # Copy notebook files
-    add_copy_directory(copy_files_bdm
-            ${CMAKE_SOURCE_DIR}/notebook
-            DESTINATION ${CMAKE_INSTALL_ROOT}/notebook
-            GLOB "*" ".*"
-            )
-
-    add_copy_files(copy_files_bdm
-            ${CMAKE_BINARY_DIR}/rootlogon.C
-            DESTINATION ${CMAKE_INSTALL_ROOT}/etc
-            )
-
     add_copy_files(copy_files_bdm
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             ${CMAKE_BINARY_DIR}/version/bdm_version.py
-            ${CMAKE_SOURCE_DIR}/util/makefile-build/bdm-code-generation
-            ${CMAKE_SOURCE_DIR}/cmake/bdm-dictionary
             )
 
     # Copy some cmake files
@@ -272,14 +178,12 @@ function(install_inside_build)
             ${CMAKE_SOURCE_DIR}/cmake/BioDynaMo.cmake
             ${CMAKE_SOURCE_DIR}/cmake/SetCompilerFlags.cmake
             ${CMAKE_SOURCE_DIR}/cmake/FindLibroadrunner.cmake
-            ${CMAKE_SOURCE_DIR}/cmake/FindROOT.cmake
             ${CMAKE_SOURCE_DIR}/cmake/FindVTune.cmake
             ${CMAKE_SOURCE_DIR}/cmake/FindOpenCL.cmake
             ${CMAKE_SOURCE_DIR}/cmake/FindNuma.cmake
             ${CMAKE_SOURCE_DIR}/cmake/FindClangTools.cmake
             ${CMAKE_SOURCE_DIR}/cmake/Findtcmalloc.cmake
             ${CMAKE_SOURCE_DIR}/cmake/Findjemalloc.cmake
-            ${CMAKE_SOURCE_DIR}/cmake/RootUseFile.cmake
             ${CMAKE_SOURCE_DIR}/cmake/CppStyleGuideChecks.cmake
             ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/UseBioDynaMo.cmake
             ${CMAKE_SOURCE_DIR}/cmake/utils.cmake
@@ -430,10 +334,6 @@ function(add_bdm_packages_properties)
             DESCRIPTION "Open Source Distributed Version Control System. (OPTIONAL)"
             TYPE REQUIRED
             )
-    SET_PACKAGE_PROPERTIES(ROOT PROPERTIES
-            DESCRIPTION "CERN's Modular Scientific Software Toolkit. (REQUIRED)"
-            TYPE REQUIRED
-            )
     SET_PACKAGE_PROPERTIES(ClangTools PROPERTIES
             DESCRIPTION "Standalone command line tools that provide developer-oriented functionalities. (OPTIONAL)"
             TYPE REQUIRED
@@ -444,7 +344,7 @@ function(add_bdm_packages_properties)
             )
     SET_PACKAGE_PROPERTIES(ParaView PROPERTIES
             DESCRIPTION "Open Source, multi-platform data analysis and visualization application. (OPTIONAL)"
-            TYPE REQUIRED
+            TYPE OPTIONAL
             )
     SET_PACKAGE_PROPERTIES(Valgrind PROPERTIES
             DESCRIPTION "A suite of tools for debugging and profiling. (OPTIONAL)"
@@ -466,11 +366,6 @@ function(add_bdm_packages_properties)
             DESCRIPTION "Package Manager System for Python. (REQUIRED)"
             TYPE REQUIRED
             )
-    SET_PACKAGE_PROPERTIES(Qt5 PROPERTIES
-            DESCRIPTION "Open Source widget toolkit for creating user interfaces. It is needed by Paraview. (OPTIONAL)"
-            TYPE REQUIRED
-            )
-
 endfunction()
 
 # Add a small description to the -D flags which we can use
@@ -481,7 +376,6 @@ function(add_bdm_feature_properties)
     ADD_FEATURE_INFO(benchmark benchmark "Build BioDynaMo's benchmark suite.")
     ADD_FEATURE_INFO(cuda cuda "Enable CUDA code generation for GPU acceleration.")
     ADD_FEATURE_INFO(opencl opencl "Enable OpenCL code generation for GPU acceleration.")
-    ADD_FEATURE_INFO(dict dict "Build with ROOT dictionaries.")
     ADD_FEATURE_INFO(numa numa "Enable NUMA-Awareness in BioDynaMo.")
     ADD_FEATURE_INFO(paraview paraview "Enable ParaView.")
     ADD_FEATURE_INFO(sbml sbml "Enable SBML integration.")
@@ -490,7 +384,6 @@ function(add_bdm_feature_properties)
     ADD_FEATURE_INFO(verbose verbose "Enable verbosity when running make install.")
     ADD_FEATURE_INFO(tcmalloc tcmalloc "Use tcmalloc for memory allocations.")
     ADD_FEATURE_INFO(jemalloc jemalloc "Use jemalloc for memory allocations.")
-    ADD_FEATURE_INFO(notebooks notebooks "Generate ROOT notebooks")
 endfunction()
 
 # Method used to give execution permissions to a file

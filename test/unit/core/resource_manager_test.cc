@@ -15,7 +15,6 @@
 // I/O related code must be in header file
 #include "unit/core/resource_manager_test.h"
 #include "core/model_initializer.h"
-#include "unit/test_util/io_test.h"
 #include "unit/test_util/test_agent.h"
 
 namespace bdm {
@@ -143,10 +142,6 @@ TEST(ResourceManagerTest, GetNumAgents) { RunGetNumAgents(); }
 TEST(ResourceManagerTest, ForEachAgentParallel) {
   RunForEachAgentParallelTest();
 }
-
-#ifdef USE_DICT
-TEST(ResourceManagerTest, IO) { RunIOTest(); }
-#endif  // USE_DICT
 
 TEST(ResourceManagerTest, PushBackAndGetAgentTest) {
   RunPushBackAndGetAgentTest();

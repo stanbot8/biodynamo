@@ -18,7 +18,6 @@
 #include <random>
 
 #include "core/container/math_array.h"
-#include "core/util/root.h"
 
 namespace bdm {
 

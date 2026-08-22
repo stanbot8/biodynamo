@@ -12,10 +12,20 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "backup_restore.h"
-#include <omp.h>
+#ifndef CORE_VISUALIZATION_PARAVIEW_VTU_WRITER_H_
+#define CORE_VISUALIZATION_PARAVIEW_VTU_WRITER_H_
 
-int main(int argc, const char** argv) {
-  omp_set_num_threads(1);
-  return bdm::Simulate(argc, argv);
-}
+#include <string>
+
+#include <vtkUnstructuredGrid.h>
+
+namespace bdm {
+
+struct VtuWriter {
+  void operator()(const std::string& folder, const std::string& file_prefix,
+                  vtkUnstructuredGrid* grid) const;
+};
+
+}  // namespace bdm
+
+#endif  // CORE_VISUALIZATION_PARAVIEW_VTU_WRITER_H_

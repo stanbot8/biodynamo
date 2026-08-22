@@ -159,6 +159,7 @@ NumaPoolAllocator::NumaPoolAllocator(uint64_t size, int nid,
       size_(size),
       nid_(nid),
       tinfo_(ThreadInfo::GetInstance()),
+      numa_available_(tinfo_->IsNumaAvailable()),
       central_(num_elements_per_n_pages_) {
   free_lists_.reserve(tinfo_->GetMaxThreads());
   for (int i = 0; i < tinfo_->GetMaxThreads(); ++i) {
@@ -169,7 +170,11 @@ NumaPoolAllocator::NumaPoolAllocator(uint64_t size, int nid,
 NumaPoolAllocator::~NumaPoolAllocator() {
   for (auto& block : memory_blocks_) {
     uint64_t size = block.end_pointer_ - block.start_pointer_;
-    numa_free(block.start_pointer_, size);
+    if (numa_available_) {
+      numa_free(block.start_pointer_, size);
+    } else {
+      free(block.start_pointer_);
+    }
   }
 }
 
@@ -236,7 +241,7 @@ void NumaPoolAllocator::AllocNewMemoryBlock(std::size_t size) {
   // check if size is multiple of N pages aligned
   assert((size & (size_n_pages_ - 1)) == 0 &&
          "Size must be a multiple of MemoryManager::kSizeNPages");
-  void* block = numa_alloc_onnode(size, nid_);
+  void* block = numa_available_ ? numa_alloc_onnode(size, nid_) : malloc(size);
   if (block == nullptr) {
     Log::Fatal("NumaPoolAllocator::AllocNewMemoryBlock", "Allocation failed");
   }
@@ -299,8 +304,7 @@ PoolAllocator::PoolAllocator(std::size_t size, uint64_t size_n_pages,
                              uint64_t max_mem_per_thread_factor)
     : size_(size), tinfo_(ThreadInfo::GetInstance()) {
   for (int nid = 0; nid < tinfo_->GetNumaNodes(); ++nid) {
-    void* ptr = numa_alloc_onnode(sizeof(NumaPoolAllocator), nid);
-    numa_allocators_.push_back(new (ptr) NumaPoolAllocator(
+    numa_allocators_.push_back(new NumaPoolAllocator(
         size, nid, size_n_pages, growth_rate, max_mem_per_thread_factor));
   }
 }
@@ -312,8 +316,7 @@ PoolAllocator::PoolAllocator(PoolAllocator&& other) noexcept
 
 PoolAllocator::~PoolAllocator() {
   for (auto* el : numa_allocators_) {
-    el->~NumaPoolAllocator();
-    numa_free(el, sizeof(NumaPoolAllocator));
+    delete el;
   }
   numa_allocators_.clear();
 }
@@ -334,8 +337,7 @@ MemoryManager::MemoryManager(uint64_t aligned_pages_shift, real_t growth_rate,
     : growth_rate_(growth_rate),
       max_mem_per_thread_factor_(max_mem_per_thread_factor),
       page_size_(sysconf(_SC_PAGESIZE)),
-      page_shift_(static_cast<uint64_t>(std::log2(page_size_))),
-      num_threads_(ThreadInfo::GetInstance()->GetMaxThreads()) {
+      page_shift_(static_cast<uint64_t>(std::log2(page_size_))) {
   aligned_pages_shift_ = aligned_pages_shift;
   aligned_pages_ = (1 << aligned_pages_shift_);
   size_n_pages_ = (1 << (page_shift_ + aligned_pages_shift_));
@@ -346,7 +348,9 @@ MemoryManager::MemoryManager(uint64_t aligned_pages_shift, real_t growth_rate,
                "greater than 0");
   }
 
-  allocators_.reserve(num_threads_ * 2 + 100);
+  allocators_.reserve(
+      static_cast<uint64_t>(ThreadInfo::GetInstance()->GetMaxThreads()) * 2 +
+      100);
 }
 
 MemoryManager::~MemoryManager() {
@@ -356,34 +360,19 @@ MemoryManager::~MemoryManager() {
 }
 
 void* MemoryManager::New(std::size_t size) {
-  if (allocators_.Capacity() > num_threads_) {
-    auto it = allocators_.find(size);
-    if (it != allocators_.end()) {
-      return it->second->New(size);
-    } else {
-      std::lock_guard<Spinlock> guard(lock_);
-      // check again, another thread might have created it in between
-      if (allocators_.find(size) == allocators_.end()) {
-        allocators_.insert(
-            std::make_pair(size, new memory_manager_detail::PoolAllocator(
-                                     size, size_n_pages_, growth_rate_,
-                                     max_mem_per_thread_factor_)));
-      }
-      return New(size);
-    }
-  } else {
+  memory_manager_detail::PoolAllocator* allocator;
+  {
     std::lock_guard<Spinlock> guard(lock_);
     auto it = allocators_.find(size);
-    if (it != allocators_.end()) {
-      return it->second->New(size);
+    if (it == allocators_.end()) {
+      allocator = new memory_manager_detail::PoolAllocator(
+          size, size_n_pages_, growth_rate_, max_mem_per_thread_factor_);
+      allocators_.insert(std::make_pair(size, allocator));
     } else {
-      allocators_.insert(std::make_pair(
-          size,
-          new memory_manager_detail::PoolAllocator(
-              size, size_n_pages_, growth_rate_, max_mem_per_thread_factor_)));
-      return allocators_.find(size)->second;
+      allocator = it->second;
     }
   }
+  return allocator->New(size);
 }
 
 void MemoryManager::Delete(void* p) {

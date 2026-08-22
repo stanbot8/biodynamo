@@ -12,10 +12,11 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "core/analysis/time_series.h"
-#include <TMath.h>
+#include <algorithm>
+
 #include <gtest/gtest.h>
 #include "core/agent/cell.h"
+#include "core/analysis/time_series.h"
 #include "core/behavior/behavior.h"
 #include "core/behavior/stateless_behavior.h"
 #include "core/resource_manager.h"
@@ -302,77 +303,6 @@ TEST(TimeSeries, ReuseAddCollectorReducerResult) {
 }
 
 // -----------------------------------------------------------------------------
-TEST(TimeSeries, StoreAndLoad) {
-  Simulation sim(TEST_NAME);
-  sim.GetResourceManager()->AddAgent(new Cell());
-  sim.GetResourceManager()->AddAgent(new Cell());
-
-  TimeSeries ts;
-  auto ycollector = [](Simulation* sim) { return static_cast<real_t>(4.0); };
-  auto xcollector = [](Simulation* sim) { return static_cast<real_t>(5.0); };
-  ts.AddCollector("collect", ycollector, xcollector);
-
-  auto d_gt_0 = [](Agent* a) { return a->GetDiameter() > 0; };
-  auto* counter = new Counter<real_t>(d_gt_0);
-  ts.AddCollector("collect1", counter, xcollector);
-
-  ts.Add("my-entry", {1, 2}, {3, 4});
-  ts.Save("ts.root");
-
-  TimeSeries* restored = nullptr;
-
-  TimeSeries::Load("ts.root", &restored);
-  ASSERT_TRUE(restored != nullptr);
-
-  EXPECT_EQ(3u, restored->Size());
-  EXPECT_TRUE(restored->Contains("my-entry"));
-  EXPECT_TRUE(restored->Contains("collect"));
-  EXPECT_TRUE(restored->Contains("collect1"));
-
-  const auto& xvals = restored->GetXValues("my-entry");
-  EXPECT_EQ(2u, xvals.size());
-  EXPECT_NEAR(1.0, xvals[0], abs_error<real_t>::value);
-  EXPECT_NEAR(2.0, xvals[1], abs_error<real_t>::value);
-  const auto& yvals = restored->GetYValues("my-entry");
-  EXPECT_EQ(2u, yvals.size());
-  EXPECT_NEAR(3.0, yvals[0], abs_error<real_t>::value);
-  EXPECT_NEAR(4.0, yvals[1], abs_error<real_t>::value);
-
-  // check if collector has been restored correctly.
-  restored->Update();
-  {
-    const auto& xvals1 = restored->GetXValues("collect");
-    EXPECT_EQ(1u, xvals1.size());
-    EXPECT_NEAR(5.0, xvals1[0], abs_error<real_t>::value);
-    const auto& yvals1 = restored->GetYValues("collect");
-    EXPECT_EQ(1u, yvals1.size());
-    EXPECT_NEAR(4.0, yvals1[0], abs_error<real_t>::value);
-  }
-  {
-    const auto& xvals1 = restored->GetXValues("collect1");
-    EXPECT_EQ(1u, xvals1.size());
-    EXPECT_NEAR(5.0, xvals1[0], abs_error<real_t>::value);
-    const auto& yvals1 = restored->GetYValues("collect1");
-    EXPECT_EQ(1u, yvals1.size());
-    EXPECT_NEAR(2.0, yvals1[0], abs_error<real_t>::value);
-  }
-  delete restored;
-}
-
-// -----------------------------------------------------------------------------
-TEST(TimeSeries, StoreJson) {
-  TimeSeries ts;
-
-  auto collect_function = [](Simulation* sim) {
-    return static_cast<real_t>(4.0);
-  };
-  ts.AddCollector("collect", collect_function);
-
-  ts.Add("my-entry", {1, 2}, {3, 4});
-  ts.SaveJson("ts.json");
-}
-
-// -----------------------------------------------------------------------------
 TEST(TimeSeries, MergeNullptr) {
   std::vector<TimeSeries> tss(2);
   tss[0].Add("entry-0", {}, {});
@@ -434,14 +364,18 @@ TEST(TimeSeries, Merge) {
   tss[2].Add("entry-0", {1, 2}, {1, 13});
 
   TimeSeries merged;
-  TimeSeries::Merge(
-      &merged, tss,
-      [](const std::vector<real_t>& all_y_values, real_t* y, real_t* el,
-         real_t* eh) {
-        *y = TMath::Median(all_y_values.size(), all_y_values.data());
-        *el = *y - *TMath::LocMin(all_y_values.begin(), all_y_values.end());
-        *eh = *TMath::LocMax(all_y_values.begin(), all_y_values.end()) - *y;
-      });
+  TimeSeries::Merge(&merged, tss,
+                    [](const std::vector<real_t>& all_y_values, real_t* y,
+                       real_t* el, real_t* eh) {
+                      auto sorted = all_y_values;
+                      std::sort(sorted.begin(), sorted.end());
+                      auto middle = sorted.size() / 2;
+                      *y = sorted.size() % 2 == 0
+                               ? (sorted[middle - 1] + sorted[middle]) / 2
+                               : sorted[middle];
+                      *el = *y - sorted.front();
+                      *eh = sorted.back() - *y;
+                    });
 
   EXPECT_EQ(1u, merged.Size());
   const auto& xvals = merged.GetXValues("entry-0");

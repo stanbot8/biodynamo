@@ -25,7 +25,7 @@ namespace bdm {
 namespace agent_test_internal {
 
 struct Growth : public Behavior {
-  BDM_BEHAVIOR_HEADER(Growth, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(Growth, Behavior);
 
   real_t growth_rate_ = 0.5;
 
@@ -50,7 +50,7 @@ struct Growth : public Behavior {
 };
 
 struct Movement : public Behavior {
-  BDM_BEHAVIOR_HEADER(Movement, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(Movement, Behavior);
   Real3 velocity_;
 
   Movement() : velocity_({{0, 0, 0}}) {
@@ -80,7 +80,7 @@ struct Movement : public Behavior {
 
 /// This behavior removes itself the first time it is executed
 struct Removal : public Behavior {
-  BDM_BEHAVIOR_HEADER(Removal, Movement, 1);
+  BDM_BEHAVIOR_HEADER(Removal, Movement);
 
   Removal() = default;
   virtual ~Removal() = default;
@@ -92,7 +92,7 @@ struct Removal : public Behavior {
 
 // -----------------------------------------------------------------------------
 struct CaptureStaticness : public Behavior {
-  BDM_BEHAVIOR_HEADER(CaptureStaticness, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(CaptureStaticness, Behavior);
 
   CaptureStaticness() = default;
   CaptureStaticness(std::unordered_map<AgentUid, bool>* static_agents_map)
@@ -107,10 +107,6 @@ struct CaptureStaticness : public Behavior {
  private:
   std::unordered_map<AgentUid, bool>* static_agents_map_;
 };
-
-#ifdef __ROOTCLING__
-static AgentPointer<Agent> dummy_ptr;
-#endif
 
 }  // namespace bdm
 

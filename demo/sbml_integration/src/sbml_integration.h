@@ -14,16 +14,12 @@
 #ifndef SBML_INTEGRATION_H_
 #define SBML_INTEGRATION_H_
 
+#include <fstream>
+#include <memory>
+
 #include "biodynamo.h"
 #include "core/util/io.h"
 #include "core/util/timing.h"
-
-#include <TAxis.h>
-#include <TCanvas.h>
-#include <TFrame.h>
-#include <TGraph.h>
-#include <TMultiGraph.h>
-#include <TPad.h>
 
 #include "rrException.h"
 #include "rrExecutableModel.h"
@@ -36,7 +32,7 @@ namespace bdm {
 // Define my custom cell, which extends Cell by adding an extra
 // data member s1_.
 class MyCell : public Cell {
-  BDM_AGENT_HEADER(MyCell, Cell, 1);
+  BDM_AGENT_HEADER(MyCell, Cell);
 
  public:
   MyCell() {}
@@ -52,7 +48,7 @@ class MyCell : public Cell {
 
 // Define SbmlBehavior to simulate intracellular chemical reaction network.
 class SbmlBehavior : public Behavior {
-  BDM_BEHAVIOR_HEADER(SbmlBehavior, Behavior, 1)
+  BDM_BEHAVIOR_HEADER(SbmlBehavior, Behavior)
 
  public:
   SbmlBehavior() {}
@@ -67,14 +63,14 @@ class SbmlBehavior : public Behavior {
     result_ = other_sbml_behavior->result_;
   }
 
-  virtual ~SbmlBehavior() { delete rr_; }
+  virtual ~SbmlBehavior() = default;
 
   void Initialize(const std::string& sbml_file,
                   const rr::SimulateOptions& opt) {
     sbml_file_ = sbml_file;
     initial_options_ = opt;
 
-    rr_ = new rr::RoadRunner(sbml_file);
+    rr_ = std::make_unique<rr::RoadRunner>(sbml_file);
     rr_->getSimulateOptions() = opt;
     // setup integrator
     rr_->setIntegrator("gillespie");
@@ -113,66 +109,32 @@ class SbmlBehavior : public Behavior {
   rr::SimulateOptions initial_options_;
   ls::DoubleMatrix result_;
   bool active_ = true;
-  rr::RoadRunner* rr_;
-  real_t dt_;
+  std::unique_ptr<rr::RoadRunner> rr_;
+  real_t dt_ = 0;
 };
 
-inline void AddToPlot(TMultiGraph* mg, const ls::Matrix<real_t>* result) {
-  ls::Matrix<real_t> foo1(*result);
-  ls::Matrix<real_t> foo(*foo1.getTranspose());
-  int rows;
-  int cols;
-  auto** twod = foo.get2DMatrix(rows, cols);
-
-  TGraph* gr = new TGraph(cols, twod[0], twod[1]);
-  gr->SetFillStyle(0);
-  gr->SetLineColorAlpha(2, 0.1);
-  gr->SetLineWidth(1);
-  gr->SetTitle("S1");
-
-  TGraph* gr1 = new TGraph(cols, twod[0], twod[2]);
-  gr1->SetTitle("S2");
-  gr1->SetLineColorAlpha(3, 0.1);
-  gr1->SetLineWidth(1);
-
-  TGraph* gr2 = new TGraph(cols, twod[0], twod[3]);
-  gr2->SetTitle("S3");
-  gr2->SetLineColorAlpha(4, 0.1);
-  gr2->SetLineWidth(1);
-
-  mg->Add(gr);
-  mg->Add(gr1);
-  mg->Add(gr2);
-  mg->Draw("AL C C");
-}
-
-inline void PlotSbmlBehaviors(const char* filename) {
-  // setup plot
-  TCanvas c;
-  c.SetGrid();
-
-  TMultiGraph* mg = new TMultiGraph();
-  mg->SetTitle("Gillespie;Timestep;Concentration");
+inline void ExportSbmlBehaviors(const char* filename) {
+  std::ofstream output(filename);
+  output << "agent,time,s1,s2,s3\n";
+  uint64_t agent_index = 0;
 
   Simulation::GetActive()->GetResourceManager()->ForEachAgent(
       [&](Agent* agent) {
         auto* cell = static_cast<MyCell*>(agent);
         const auto& behaviour = cell->GetAllBehaviors();
         if (behaviour.size() == 1) {
-          AddToPlot(mg, &static_cast<SbmlBehavior*>(behaviour[0])->GetResult());
+          const auto& result =
+              static_cast<SbmlBehavior*>(behaviour[0])->GetResult();
+          for (unsigned row = 0; row < result.numRows(); ++row) {
+            output << agent_index;
+            for (unsigned column = 0; column < result.numCols(); ++column) {
+              output << ',' << result(row, column);
+            }
+            output << '\n';
+          }
         }
+        ++agent_index;
       });
-
-  // finalize plot
-  // TCanvas::Update() draws the frame, after which one can change it
-  c.Update();
-  c.GetFrame()->SetBorderSize(12);
-  gPad->Modified();
-  gPad->Update();
-  c.Modified();
-  c.cd(0);
-  // c.BuildLegend(); // TODO position of legend
-  c.SaveAs(filename);
 }
 
 inline int Simulate(int argc, const char** argv) {
@@ -216,7 +178,7 @@ inline int Simulate(int argc, const char** argv) {
   auto stop = Timing::Timestamp();
   std::cout << "RUNTIME " << (stop - start) << std::endl;
 
-  PlotSbmlBehaviors("sbml-behaviors.svg");
+  ExportSbmlBehaviors("sbml-behaviors.csv");
 
   std::cout << "Simulation completed successfully!" << std::endl;
   return 0;

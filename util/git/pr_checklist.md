@@ -49,7 +49,7 @@ First time contributor? Make sure to review our contributing guidelines:
 
 - [ ] **New feature**
   - [ ] Update documentation for website (if significant feature)
-  - [ ] Consider adding notebook or example showing how to use the new feature
+  - [ ] Consider adding an example showing how to use the new feature
 
 - [ ] **New example**
   - [ ] Make sure that the example is checked in the System CIs

@@ -37,15 +37,12 @@ cd $BDM_PROJECT_DIR
 
 BDM_OS=$(DetectOs)
 
-NOTEBOOK_FLAG="-Dnotebooks=off"
-
 # speed-up build by disabling tests and demos
-# Currently SBML and notebooks is not supported on osx
+# Currently SBML is not supported on osx
 if [ "$BDM_OS" != "osx" ]; then
   SBML_FLAG="-Dsbml=on"
-  NOTEBOOK_FLAG="-Dnotebooks=on"
 fi
-export BDM_CMAKE_FLAGS="-Dtest=off ${NOTEBOOK_FLAG} ${SBML_FLAG}"
+export BDM_CMAKE_FLAGS="-Dtest=off ${SBML_FLAG}"
 
 # Build BioDynaMo
 SILENT_INSTALL=1 $BDM_PROJECT_DIR/install.sh

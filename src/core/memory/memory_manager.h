@@ -116,6 +116,7 @@ class NumaPoolAllocator {
   uint64_t size_;
   int nid_;
   ThreadInfo* tinfo_;
+  bool numa_available_;
   std::vector<AllocatedBlock> memory_blocks_;
   std::vector<List> free_lists_;  // one per thread
   List central_;
@@ -167,7 +168,7 @@ class MemoryManager {
   uint64_t aligned_pages_shift_;
   uint64_t aligned_pages_;
   uint64_t size_n_pages_;
-  uint64_t num_threads_;
+
   bool ignore_delete_ = false;
 
   UnorderedFlatmap<std::size_t, memory_manager_detail::PoolAllocator*>

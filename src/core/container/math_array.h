@@ -26,7 +26,6 @@
 
 #include "core/real_t.h"
 #include "core/util/log.h"
-#include "core/util/root.h"
 
 namespace bdm {
 

@@ -16,6 +16,8 @@
 #define CORE_OPERATION_REDUCTION_OP_H_
 
 #include <array>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "core/agent/agent.h"
@@ -39,21 +41,17 @@ class ReductionOp : public AgentOperationImpl {
     tl_results_.resize(ThreadInfo::GetInstance()->GetMaxThreads());
   }
 
-  ~ReductionOp() override {
-    delete agent_functor_;
-    delete reduce_functor_;
-  }
-
   void SetUp() override {
     for (auto& el : tl_results_) {
       el = T();
     }
   }
 
-  void Initialize(Functor<void, Agent*, T*>* agent_functor,
-                  Functor<T, const SharedData<T>&>* reduce_functor) {
-    agent_functor_ = agent_functor;
-    reduce_functor_ = reduce_functor;
+  void Initialize(
+      std::shared_ptr<Functor<void, Agent*, T*>> agent_functor,
+      std::shared_ptr<Functor<T, const SharedData<T>&>> reduce_functor) {
+    agent_functor_ = std::move(agent_functor);
+    reduce_functor_ = std::move(reduce_functor);
   }
 
   // This operator will be called for each agent in a parallel loop
@@ -77,10 +75,10 @@ class ReductionOp : public AgentOperationImpl {
   SharedData<T> tl_results_;
 
   // The functor containing the logic on what to execute for each agent
-  Functor<void, Agent*, T*>* agent_functor_ = nullptr;
+  std::shared_ptr<Functor<void, Agent*, T*>> agent_functor_;
   // The functor containing the logic on how to reduce the partial results into
   // a single result value of type T
-  Functor<T, const SharedData<T>&>* reduce_functor_ = nullptr;
+  std::shared_ptr<Functor<T, const SharedData<T>&>> reduce_functor_;
 };
 
 template <typename T>

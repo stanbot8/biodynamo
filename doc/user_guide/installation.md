@@ -22,7 +22,7 @@ To install and update BioDynaMo execute the following command.
 curl https://biodynamo.github.io/install | bash
 ```
 
-This will also install all prerequisites, including ROOT, ParaView and Qt5.
+This also installs the required toolchain and libraries. ParaView remains an optional system dependency.
 By default the installation directory is set to `$HOME/biodynamo-vX.Y.Z`, where X.Y.Z is the version number.
 
 <br/>

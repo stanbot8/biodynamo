@@ -14,6 +14,8 @@
 
 #include "gtest/gtest.h"
 
+#include <memory>
+
 #include "core/agent/cell.h"
 #include "core/model_initializer.h"
 #include "core/operation/operation.h"
@@ -41,6 +43,29 @@ struct OperationTestOp : public StandaloneOperationImpl {
 };
 
 BDM_REGISTER_OP(OperationTestOp, "OperationTestOp", kCpu);
+
+struct LazyOperationTestOp : public StandaloneOperationImpl {
+  LazyOperationTestOp() { constructor_calls_++; }
+
+  void operator()() override {}
+
+  LazyOperationTestOp* Clone() override {
+    return new LazyOperationTestOp(*this);
+  }
+
+  static int constructor_calls_;
+  static bool registered_;
+};
+
+int LazyOperationTestOp::constructor_calls_ = 0;
+
+BDM_REGISTER_OP(LazyOperationTestOp, "LazyOperationTestOp", kCpu);
+
+TEST(OperationTest, RegistryDefersImplementationConstruction) {
+  EXPECT_EQ(0, LazyOperationTestOp::constructor_calls_);
+  auto operation = std::unique_ptr<Operation>(NewOperation("LazyOperationTestOp"));
+  EXPECT_EQ(1, LazyOperationTestOp::constructor_calls_);
+}
 
 TEST(OperationTest, SetupTearDown) {
   Simulation simulation("");
@@ -106,13 +131,15 @@ TEST(OperationTest, ReductionOp) {
   // Count total number of agents with a diameter greater than 6
   auto* op = NewOperation("ReductionOpInt");
   auto* op_impl = op->GetImplementation<ReductionOp<int>>();
-  op_impl->Initialize(new CheckDiameter(6), new SumReduction<int>());
+  op_impl->Initialize(std::make_shared<CheckDiameter>(6),
+                      std::make_shared<SumReduction<int>>());
   scheduler->ScheduleOp(op);
 
   // Check average X position of all agents
   auto* op_d = NewOperation("ReductionOpDouble");
   auto* op_d_impl = op_d->GetImplementation<ReductionOp<real_t>>();
-  op_d_impl->Initialize(new CheckXPosition(), new SumReduction<real_t>());
+  op_d_impl->Initialize(std::make_shared<CheckXPosition>(),
+                        std::make_shared<SumReduction<real_t>>());
   scheduler->ScheduleOp(op_d);
 
   simulation.Simulate(1);
@@ -142,13 +169,35 @@ TEST(OperationTest, ReductionOpMultiThreading) {
   // Count total number of agents with a diameter greater than 0
   auto* op = NewOperation("ReductionOpInt");
   auto* op_impl = op->GetImplementation<ReductionOp<int>>();
-  op_impl->Initialize(new CheckDiameter(0), new SumReduction<int>());
+  op_impl->Initialize(std::make_shared<CheckDiameter>(0),
+                      std::make_shared<SumReduction<int>>());
   scheduler->ScheduleOp(op);
 
   simulation.Simulate(1);
 
   // Check the total number of agents with a diameter greater than 6
   EXPECT_EQ(8000, op_impl->GetResults()[0]);
+}
+
+TEST(OperationTest, ReductionCloneSharesFunctorOwnership) {
+  auto agent_functor = std::make_shared<CheckDiameter>(0);
+  auto reduce_functor = std::make_shared<SumReduction<int>>();
+  std::weak_ptr<CheckDiameter> agent_owner = agent_functor;
+  std::weak_ptr<SumReduction<int>> reduce_owner = reduce_functor;
+
+  auto operation = std::unique_ptr<Operation>(NewOperation("ReductionOpInt"));
+  operation->GetImplementation<ReductionOp<int>>()->Initialize(
+      agent_functor, reduce_functor);
+  auto clone = std::unique_ptr<Operation>(operation->Clone());
+  agent_functor.reset();
+  reduce_functor.reset();
+
+  operation.reset();
+  EXPECT_FALSE(agent_owner.expired());
+  EXPECT_FALSE(reduce_owner.expired());
+  clone.reset();
+  EXPECT_TRUE(agent_owner.expired());
+  EXPECT_TRUE(reduce_owner.expired());
 }
 
 }  // namespace bdm

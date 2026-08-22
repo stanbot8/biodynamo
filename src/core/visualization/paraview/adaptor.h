@@ -36,7 +36,7 @@
 namespace bdm {
 
 /// The class that bridges the simulation code with ParaView.
-class ParaviewAdaptor : private VisualizationAdaptor {
+class ParaviewAdaptor : public VisualizationAdaptor {
  public:
   /// Initializes Catalyst with the predefined pipeline and allocates memory
   /// for the VTK grid structures
@@ -50,11 +50,11 @@ class ParaviewAdaptor : private VisualizationAdaptor {
   struct ParaviewImpl;
 
  private:
-  std::unique_ptr<ParaviewImpl> impl_;    //!
-  static std::atomic<uint64_t> counter_;  //!
+  std::unique_ptr<ParaviewImpl> impl_;
+  static std::atomic<uint64_t> counter_;
 
   /// only needed for insitu visualization
-  bool initialized_ = false;  //!
+  bool initialized_ = false;
   bool simulation_info_json_generated_ = false;
 
   friend class ParaviewAdaptorTest_GenerateSimulationInfoJson_Test;
@@ -96,8 +96,6 @@ class ParaviewAdaptor : private VisualizationAdaptor {
   /// Combine user-defined python script with biodynamo default python
   /// insitu pipeline.
   static std::string BuildPythonScriptString(const std::string& python_script);
-
-  ClassDefNV(ParaviewAdaptor, 1);
 };
 
 }  // namespace bdm

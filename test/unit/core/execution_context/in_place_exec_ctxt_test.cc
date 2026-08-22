@@ -25,6 +25,27 @@
 namespace bdm {
 namespace in_place_exec_ctxt_detail {
 
+class TransientAgent : public TestAgent {
+ public:
+  ~TransientAgent() override { ++destruction_count; }
+
+  static uint64_t destruction_count;
+};
+
+uint64_t TransientAgent::destruction_count = 0;
+
+TEST(InPlaceExecutionContext, OwnsTransientAgentsUntilCommit) {
+  TransientAgent::destruction_count = 0;
+  {
+    Simulation sim(TEST_NAME);
+    sim.GetExecutionContext()->AddAgent(new TransientAgent());
+
+    EXPECT_EQ(0u, sim.GetResourceManager()->GetNumAgents());
+    EXPECT_EQ(0u, TransientAgent::destruction_count);
+  }
+  EXPECT_EQ(1u, TransientAgent::destruction_count);
+}
+
 TEST(InPlaceExecutionContext, RemoveAgent) {
   Simulation sim(TEST_NAME);
   auto* rm = sim.GetResourceManager();

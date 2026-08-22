@@ -255,6 +255,15 @@ class MyCell : public Cell {  // our object extends the Cell object
   void SetCellColor(int cell_color) { cell_color_ = cell_color; }
   int GetCellColor() const { return cell_color_; }
 
+  bool GetVisualizationData(const std::string& name,
+                            VisualizationData* values) const override {
+    if (name == "cell_color_") {
+      *values = std::vector<int>{cell_color_};
+      return true;
+    }
+    return Base::GetVisualizationData(name, values);
+  }
+
  private:
   // declare new data member and define their type
   // private data can only be accessed by public function and not directly

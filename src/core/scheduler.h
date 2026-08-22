@@ -33,9 +33,7 @@ namespace bdm {
 
 class SchedulerTest;
 class Agent;
-class SimulationBackup;
 class VisualizationAdaptor;
-class RootAdaptor;
 struct BoundSpace;
 class MechanicalForcesOp;
 class DiffusionOp;
@@ -44,8 +42,6 @@ enum OpType { kSchedule, kPreSchedule, kPostSchedule };
 
 class Scheduler {
  public:
-  using Clock = std::chrono::high_resolution_clock;
-
   Scheduler();
 
   virtual ~Scheduler();
@@ -62,8 +58,6 @@ class Scheduler {
   ///        return rm->GetNumAgents() >= 1000;
   ///     });
   ///
-  /// NB: Automated backups and restores are not yet supported
-  /// if the simulation uses this simulate function. TODO(lukas)
   void SimulateUntil(const std::function<bool()>& exit_condition);
 
   /// Finalize simulation initialization or manual changes between
@@ -99,8 +93,6 @@ class Scheduler {
 
   const std::vector<Functor<bool, Agent*>*>& GetAgentFilters() const;
 
-  RootAdaptor* GetRootVisualization() { return root_visualization_; }
-
   TimingAggregator* GetOpTimes();
 
   /// Prints an overview of all pre-scheduled, agent, standalone, and
@@ -120,30 +112,26 @@ class Scheduler {
   virtual void Execute();
 
  private:
-  friend void RunAgentsTest(Param::MappedDataArrayMode, uint64_t, bool, bool);
+  friend void RunAgentsTest(uint64_t, bool, bool);
   friend SchedulerTest;
 
-  SimulationBackup* backup_ = nullptr;
-  uint64_t restore_point_;
-  std::chrono::time_point<Clock> last_backup_ = Clock::now();
-  RootAdaptor* root_visualization_ = nullptr;  //!
   ProgressBar* progress_bar_ = nullptr;
 
   /// List of all operations that have been add either as default
   /// or by a call to Scheduler::ScheduleOp.
   /// Scheduler::UnscheduleOp doesn't remove the operation from this
   /// list.
-  std::vector<Operation*> all_ops_;  //!
+  std::vector<Operation*> all_ops_;
   /// List of operations that are to be added in the upcoming timestep
-  std::vector<std::pair<OpType, Operation*>> schedule_ops_;  //!
+  std::vector<std::pair<OpType, Operation*>> schedule_ops_;
   /// List of operations that are to be removed in the upcoming timestep
-  std::vector<Operation*> unschedule_ops_;  //!
+  std::vector<Operation*> unschedule_ops_;
   /// List of operations will be executed as a stand-alone operation
-  std::vector<Operation*> scheduled_standalone_ops_;  //!
+  std::vector<Operation*> scheduled_standalone_ops_;
   /// List of operations will be executed on all agents
-  std::vector<Operation*> scheduled_agent_ops_;  //!
+  std::vector<Operation*> scheduled_agent_ops_;
   /// List of operations that cannot be affected by the user
-  std::vector<std::string> protected_op_names_;  //!
+  std::vector<std::string> protected_op_names_;
   // Operations that are run before setting up, running and tearing down
   // scheduled operations
   std::vector<Operation*> pre_scheduled_ops_;
@@ -156,15 +144,7 @@ class Scheduler {
   /// Agent operations are executed for each filter in agent_filters_.\n
   /// By default no filter is specified which means that all
   /// agent operations will be executed for each agents in the simulation.
-  std::vector<Functor<bool, Agent*>*> agent_filters_;  //!
-
-  /// Backup the simulation. Backup interval based on `Param::backup_interval`
-  void Backup();
-
-  /// Restore the simulation if requested at the right time
-  /// @param steps number of simulation steps for a `Simulate` call
-  /// @return if `Simulate` should return early
-  bool Restore(uint64_t* steps);
+  std::vector<Functor<bool, Agent*>*> agent_filters_;
 
   void UpdateSimulatedTime();
 

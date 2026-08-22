@@ -22,8 +22,6 @@
 #include "core/visualization/paraview/vtk_agents.h"
 #include "core/visualization/paraview/vtk_diffusion_grid.h"
 
-#ifndef __ROOTCLING__
-
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
 #include <vtkCPProcessor.h>
@@ -214,7 +212,8 @@ void ParaviewAdaptor::CreateVtkObjects() {
 void ParaviewAdaptor::BuildAgentsVTKStructures() {
   auto* rm = Simulation::GetActive()->GetResourceManager();
   for (auto& pair : impl_->vtk_agents_) {
-    const auto& agents = rm->GetTypeIndex()->GetType(pair.second->GetTClass());
+    const auto& agents =
+        rm->GetTypeIndex()->GetType(pair.second->GetTypeName());
     pair.second->Update(&agents);
   }
 }
@@ -251,10 +250,9 @@ void ParaviewAdaptor::WriteSimulationInfoJsonFile() {
 void ParaviewAdaptor::GenerateParaviewState() {
   auto* sim = Simulation::GetActive();
   std::stringstream python_cmd;
-  std::string pv_dir = std::getenv("ParaView_DIR");
   std::string bdmsys = std::getenv("BDMSYS");
 
-  python_cmd << pv_dir << "/bin/pvbatch " << bdmsys
+  python_cmd << "pvbatch " << bdmsys
              << "/include/core/visualization/paraview/generate_pv_state.py "
              << sim->GetOutputDir() << "/" << kSimulationInfoJson;
   int ret_code = system(python_cmd.str().c_str());
@@ -298,25 +296,3 @@ std::string ParaviewAdaptor::BuildPythonScriptString(
 }
 
 }  // namespace bdm
-
-#else
-
-namespace bdm {
-
-ParaviewAdaptor::ParaviewAdaptor() {}
-
-void ParaviewAdaptor::Visualize() {}
-
-void ParaviewAdaptor::InsituVisualization() {}
-
-void ParaviewAdaptor::ExportVisualization() {}
-
-void ParaviewAdaptor::WriteToFile() {}
-
-void ParaviewAdaptor::GenerateParaviewState() {}
-
-std::string ParaviewAdaptor::BuildPythonScriptString(
-    const std::string& python_script) {}
-}  // namespace bdm
-
-#endif

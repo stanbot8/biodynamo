@@ -13,19 +13,14 @@
 #
 # -----------------------------------------------------------------------------
 
-BDM_PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
-
 valgrind \
   --track-origins=yes \
-  --num-callers=50 \
+  --num-callers=25 \
   --leak-resolution=high \
   --tool=memcheck \
   --leak-check=full \
   --show-leak-kinds=all \
-  --gen-suppressions=all \
+  --suppressions="$(dirname "${BASH_SOURCE[0]}")/valgrind-bdm.supp" \
   --show-reachable=no \
-  --suppressions=${BDM_PROJECT_DIR}/util/valgrind-bdm.supp \
-  --suppressions=$ROOTSYS/etc/valgrind-root.supp \
   --error-exitcode=1 \
-  --num-callers=25 \
   "$@"
