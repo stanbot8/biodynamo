@@ -220,40 +220,7 @@ if (jemalloc)
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ljemalloc -L ${JEMALLOC_LIBRARY_DIR}")
 endif()
 
-if (APPLE)
-   set(NOPYENV YES)
-endif()
-
-
-if(NOPYENV)
-   # On macOS
-   # need to give hint which binary to find, however ideally it should be taken from the range spec 
-   set(Python3_EXECUTABLE "${BREW_PREFIX}/bin/python3.9")
-   find_package(Python3 3.9.1...<3.10 COMPONENTS Interpreter Development)
-   set(pythonvers ${Python_VERSION})
-   if (NOT Python3_FOUND)
-      message(FATAL_ERROR "We did not find the Python 3.9 interpreter. "
-         "Please run ./prerequisites.sh (or \"brew install python@3.9\") "
-         "again before calling cmake. The Python 3.9 interpreter "
-         "is required in order to successfully use BioDynaMo.")      
-   endif()
-else()
-   # Check if Python 3.9.1 from PyEnv is installed
-   set(pythonvers "3.9.1")
-   find_package(Python ${pythonvers} EXACT COMPONENTS Interpreter Development)
-   if (NOT Python_FOUND)
-      message(FATAL_ERROR "We did not find the Python ${pythonvers} interpreter from PyEnv. "
-         "Make sure you executed \"pyenv shell ${pythonvers}\" before running cmake. "
-         "If that doesn't work, run ./prerequisites.sh again. The Python ${pythonvers} "
-         "interpreter is required in order to successfully use BioDynaMo."
-         "You may also try the following sequence of commands that has often resolved"
-         "the problem: \n"
-         "export PATH=\"$HOME/.pyenv/bin:$PATH\" \n"
-         "eval \"$(pyenv init --path)\" \n"
-         "eval \"$(pyenv init -)\" \n"
-         "pyenv shell ${pythonvers}")
-   endif()
-endif()
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 # Check if OpenMPI is present
 find_package(MPI COMPONENTS C CXX)
@@ -437,7 +404,9 @@ if(paraview)
                    PATHS ${CMAKE_THIRD_PARTY_DIR}/paraview)
     endif()
 
-    include_directories(${ParaView_PREFIX_PATH}/include/paraview-${CMAKE_BDM_PVVERSION})
+    get_target_property(PARAVIEW_CATALYST_INCLUDE_DIRS
+                        ParaView::Catalyst INTERFACE_INCLUDE_DIRECTORIES)
+    include_directories(${PARAVIEW_CATALYST_INCLUDE_DIRS})
     add_definitions("-DUSE_PARAVIEW")
 endif()
 
@@ -806,8 +775,8 @@ install_inside_build()
 get_cmake_property(variables CACHE_VARIABLES)
 foreach(var ${variables})
   if((var MATCHES "_(LIBRARIES|LIBRARY|INCLUDE|VERSION)") AND
-     (NOT ${${var}} STREQUAL "") AND
-     (NOT ${var} MATCHES "NOTFOUND"))
+     (NOT "${${var}}" STREQUAL "") AND
+     (NOT "${${var}}" MATCHES "NOTFOUND"))
     if (var MATCHES "^QT_")
       # filter out the very long list of Qt libraries and include dirs
       if (var MATCHES "(QT_LIBRARY_DIR|QT_QTCORE_INCLUDE_DIR)")
