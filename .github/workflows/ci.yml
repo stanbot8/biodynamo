@@ -1,0 +1,182 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '0 3 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libblas-dev libboost-dev liblapack-dev libnuma-dev libomp-dev \
+            libopenmpi-dev ninja-build
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -Dbenchmark=OFF \
+            -Dcuda=OFF \
+            -Dlibgit2=OFF \
+            -DNOPYENV=ON \
+            -Dopencl=OFF \
+            -Dparaview=OFF \
+            -Dsbml=OFF \
+            -Dvalgrind=OFF \
+            -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: cmake --build build --target run-unit-tests
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install boost cmake libomp ninja open-mpi
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -Dbenchmark=OFF \
+            -Dcuda=OFF \
+            -Dlibgit2=OFF \
+            -DNOPYENV=ON \
+            -Dopencl=OFF \
+            -Dparaview=OFF \
+            -Dsbml=OFF \
+            -Dvalgrind=OFF \
+            -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: cmake --build build --target run-unit-tests
+
+  paraview:
+    runs-on: ubuntu-24.04
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libblas-dev libboost-dev liblapack-dev libomp-dev \
+            libdouble-conversion-dev libfreetype-dev libglew-dev libhdf5-dev \
+            libnetcdf-dev libopenmpi-dev libutfcpp-dev libx11-dev \
+            libxml2-dev ninja-build paraview paraview-dev qtbase5-dev
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -Dbenchmark=OFF \
+            -Dcuda=OFF \
+            -Dlibgit2=OFF \
+            -DNOPYENV=ON \
+            -Dnuma=OFF \
+            -Dopencl=OFF \
+            -Dparaview=ON \
+            -Dsbml=OFF \
+            -Dvalgrind=OFF \
+            -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: cmake --build build --target run-unit-tests
+
+  sanitizers:
+    runs-on: ubuntu-24.04
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libblas-dev libboost-dev liblapack-dev libomp-dev \
+            libopenmpi-dev ninja-build
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -Dbenchmark=OFF \
+            -Dcuda=OFF \
+            -Dlibgit2=OFF \
+            -DNOPYENV=ON \
+            -Dnuma=OFF \
+            -Dopencl=OFF \
+            -Dparaview=OFF \
+            -Dsbml=OFF \
+            -Dvalgrind=OFF \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' \
+            -DCMAKE_SHARED_LINKER_FLAGS='-fsanitize=address,undefined'
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: cmake --build build --target run-unit-tests
+
+  singularity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SingularityCE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          curl -fsSLo singularity-ce.deb \
+            https://github.com/sylabs/singularity/releases/download/v4.5.0/singularity-ce_4.5.0-noble_amd64.deb
+          echo '85e6f7af5e7aad5b1bf28183ce333998bd37eb8f4769af352c47a5153f3373fb  singularity-ce.deb' \
+            | sha256sum --check
+          sudo apt-get install -y ./singularity-ce.deb
+      - name: Configure fakeroot
+        run: sudo singularity config fakeroot --add "$USER"
+      - name: Build image
+        run: singularity build --fakeroot biodynamo.sif Singularity
+      - name: Run demo
+        run: |
+          singularity exec --cleanenv biodynamo.sif bash -lc '
+            source /biodynamo/build/bin/thisbdm.sh
+            cd "$(mktemp -d)"
+            bdm demo tumor_concept
+            cd tumor_concept
+            bdm run'
+
+  repository:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+      - name: Check formatting
+        run: |
+          ./util/housekeeping/run-clang-format.sh \
+            "$(pwd)" clang-format 0 $(./util/housekeeping/get-all-src-files.sh .)
+      - name: Check copyright
+        run: |
+          ./util/housekeeping/check-copyright.sh \
+            util/housekeeping/copyright_cpp.txt \
+            $(./util/housekeeping/get-all-src-files.sh .)
