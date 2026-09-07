@@ -18,8 +18,6 @@
 #include <cstdlib>
 #include <vector>
 
-#include "core/util/root.h"
-
 namespace bdm {
 
 /// \brief std::vector with parallel resize
@@ -30,8 +28,6 @@ class ParallelResizeVector {
   using const_iterator = const T*;
   using value_type = T;
 
-  explicit ParallelResizeVector(TRootIOCtor* io_ctor) {
-  }  // Constructor for ROOT I/O
   ParallelResizeVector() = default;
   ParallelResizeVector(std::initializer_list<T> init) {
     reserve(init.size());
@@ -179,8 +175,7 @@ class ParallelResizeVector {
   static constexpr float kGrowFactor = 1.5;
   std::size_t size_ = 0;
   std::size_t capacity_ = 0;
-  T* data_ = nullptr;                      //[capacity_]  // NOLINT
-  BDM_CLASS_DEF(ParallelResizeVector, 1);  // NOLINT
+  T* data_ = nullptr;
 };
 
 }  // namespace bdm

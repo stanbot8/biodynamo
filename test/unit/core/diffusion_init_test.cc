@@ -19,10 +19,9 @@
 #include "core/model_initializer.h"
 #include "core/simulation.h"
 #include "core/substance_initializers.h"
+#include "core/util/math.h"
 #include "gtest/gtest.h"
 #include "unit/test_util/test_util.h"
-
-#include "Math/DistFunc.h"
 
 namespace bdm {
 
@@ -74,13 +73,13 @@ TEST(DiffusionInitTest, GaussianBand) {
 
   auto eps = abs_error<real_t>::value;
 
-  EXPECT_NEAR(ROOT::Math::normal_pdf(a[0], 50, 125), dgrid->GetValue(a), eps);
-  EXPECT_NEAR(ROOT::Math::normal_pdf(b[0], 50, 125), dgrid->GetValue(b), eps);
-  EXPECT_NEAR(ROOT::Math::normal_pdf(c[0], 50, 125), dgrid->GetValue(c), eps);
-  EXPECT_NEAR(ROOT::Math::normal_pdf(d[0], 50, 125), dgrid->GetValue(d), eps);
+  EXPECT_NEAR(Math::NormalPdf(a[0], 50, 125), dgrid->GetValue(a), eps);
+  EXPECT_NEAR(Math::NormalPdf(b[0], 50, 125), dgrid->GetValue(b), eps);
+  EXPECT_NEAR(Math::NormalPdf(c[0], 50, 125), dgrid->GetValue(c), eps);
+  EXPECT_NEAR(Math::NormalPdf(d[0], 50, 125), dgrid->GetValue(d), eps);
   // Should be symmetric, so the two ends should have the same value
-  EXPECT_NEAR(ROOT::Math::normal_pdf(e[0], 50, 125), dgrid->GetValue(e), eps);
-  EXPECT_NEAR(ROOT::Math::normal_pdf(f[0], 50, 125), dgrid->GetValue(f), eps);
+  EXPECT_NEAR(Math::NormalPdf(e[0], 50, 125), dgrid->GetValue(e), eps);
+  EXPECT_NEAR(Math::NormalPdf(f[0], 50, 125), dgrid->GetValue(f), eps);
 }
 
 // Both internal arrays (c1_ and c2_) need to be initialized to avoid unphysical

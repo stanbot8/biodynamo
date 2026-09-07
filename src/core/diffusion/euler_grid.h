@@ -55,7 +55,6 @@ class EulerGrid : public DiffusionGrid {
   void DiffuseWithPeriodic(real_t dt) override;
 
  private:
-  BDM_CLASS_DEF_OVERRIDE(EulerGrid, 1);
 };
 
 }  // namespace bdm

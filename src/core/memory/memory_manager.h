@@ -116,6 +116,7 @@ class NumaPoolAllocator {
   uint64_t size_;
   int nid_;
   ThreadInfo* tinfo_;
+  bool numa_available_;
   std::vector<AllocatedBlock> memory_blocks_;
   std::vector<List> free_lists_;  // one per thread
   List central_;

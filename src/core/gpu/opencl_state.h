@@ -19,7 +19,7 @@ class Context;
 class CommandQueue;
 class Device;
 class Program;
-};      // namespace cl
+};  // namespace cl
 #endif  // PIMPL_HELPERS_OPENCL_
 
 #ifndef CORE_GPU_OPENCL_STATE_H_
@@ -71,7 +71,7 @@ class OpenCLState {
   struct OpenCLImplDestructor {
     void operator()(OpenCLImpl* p);
   };
-  std::unique_ptr<OpenCLImpl, OpenCLImplDestructor> impl_;  //!
+  std::unique_ptr<OpenCLImpl, OpenCLImplDestructor> impl_;
 };
 
 }  // namespace bdm
