@@ -113,14 +113,8 @@ void InPlaceExecutionContext::ThreadSafeAgentUidMap::DeleteOldCopies() {
 InPlaceExecutionContext::InPlaceExecutionContext(
     const std::shared_ptr<ThreadSafeAgentUidMap>& map)
     : new_agent_map_(map), tinfo_(ThreadInfo::GetInstance()) {
-  new_agents_.reserve(1e3);
+  transient_agents_.reserve(1000);
   cache_neighbors_ = Simulation::GetActive()->GetParam()->cache_neighbors;
-}
-
-InPlaceExecutionContext::~InPlaceExecutionContext() {
-  for (auto* agent : new_agents_) {
-    delete agent;
-  }
 }
 
 void InPlaceExecutionContext::SetupIterationAll(
@@ -230,7 +224,7 @@ void InPlaceExecutionContext::Execute(
 }
 
 void InPlaceExecutionContext::AddAgent(Agent* new_agent) {
-  new_agents_.push_back(new_agent);
+  transient_agents_.emplace_back(new_agent);
   new_agent_map_->Insert(new_agent->GetUid(), new_agent);
 }
 
@@ -326,7 +320,7 @@ void InPlaceExecutionContext::AddAgentsToRm(
     auto* ctxt = bdm_static_cast<InPlaceExecutionContext*>(all_exec_ctxts[tid]);
     int nid = tinfo_->GetNumaNode(tid);
     thread_offsets[tid] = new_agent_per_numa[nid];
-    new_agent_per_numa[nid] += ctxt->new_agents_.size();
+    new_agent_per_numa[nid] += ctxt->transient_agents_.size();
   }
 
   // reserve enough memory in ResourceManager
@@ -337,14 +331,14 @@ void InPlaceExecutionContext::AddAgentsToRm(
     numa_offsets[n] = rm->GrowAgentContainer(new_agent_per_numa[n], n);
   }
 
-// add new_agents_ to the ResourceManager in parallel
+// Transfer transient agents to the ResourceManager in parallel.
 #pragma omp parallel for schedule(static, 1)
   for (int i = 0; i < tinfo_->GetMaxThreads(); i++) {
     auto* ctxt = bdm_static_cast<InPlaceExecutionContext*>(all_exec_ctxts[i]);
     int nid = tinfo_->GetNumaNode(i);
     uint64_t offset = thread_offsets[i] + numa_offsets[nid];
-    rm->AddAgents(nid, offset, ctxt->new_agents_);
-    ctxt->new_agents_.clear();
+    rm->AddAgents(nid, offset, ctxt->transient_agents_);
+    ctxt->transient_agents_.clear();
   }
 
   new_agent_map_->DeleteOldCopies();
