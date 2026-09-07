@@ -22,17 +22,14 @@
 #include "core/diffusion/euler_grid.h"
 #include "core/environment/environment.h"
 #include "core/resource_manager.h"
-#include "core/util/io.h"
 #include "core/util/type.h"
 #include "unit/test_util/test_agent.h"
 #include "unit/test_util/test_util.h"
 
-#define ROOTFILE "bdmFile.root"
-
 namespace bdm {
 
 class A : public TestAgent {
-  BDM_AGENT_HEADER(A, TestAgent, 1);
+  BDM_AGENT_HEADER(A, TestAgent);
 
  public:
   A() = default;
@@ -45,7 +42,7 @@ class A : public TestAgent {
 };
 
 class B : public TestAgent {
-  BDM_AGENT_HEADER(B, TestAgent, 1);
+  BDM_AGENT_HEADER(B, TestAgent);
 
  public:
   B() = default;
@@ -322,8 +319,13 @@ struct CheckForEachAgentFunctor : Functor<void, Agent*> {
       if (numa_checks && handle.GetNumaNode() != GetNumaNodeForMemory(agent)) {
         numa_memory_errors++;
       }
-      if (numa_checks &&
-          handle.GetNumaNode() != numa_node_of_cpu(sched_getcpu())) {
+      unsigned int current_numa_node = 0;
+#ifdef USE_NUMA
+      if (numa_checks) {
+        EXPECT_EQ(0, getcpu(nullptr, &current_numa_node));
+      }
+#endif
+      if (numa_checks && handle.GetNumaNode() != current_numa_node) {
         numa_thread_errors++;
       }
 
@@ -385,7 +387,8 @@ inline void RunSortAndForEachAgentParallel(uint64_t num_agent_per_type) {
   simulation.GetEnvironment()->Update();
   rm->LoadBalance();
 
-  CheckForEachAgent(rm, num_agent_per_type, true);
+  CheckForEachAgent(rm, num_agent_per_type,
+                    ThreadInfo::GetInstance()->IsNumaAvailable());
 
   // check if agent uids still point to the correct object
   for (auto& entry : a_x_values) {
@@ -556,7 +559,8 @@ inline void RunSortAndForEachAgentParallelDynamic(uint64_t num_agent_per_type,
   simulation.GetEnvironment()->Update();
   rm->LoadBalance();
 
-  CheckForEachAgentDynamic(rm, num_agent_per_type, batch_size, true);
+  CheckForEachAgentDynamic(rm, num_agent_per_type, batch_size,
+                           ThreadInfo::GetInstance()->IsNumaAvailable());
 
   // check if agent uids still point to the correct object
   for (auto& entry : a_x_values) {
@@ -586,67 +590,6 @@ inline void RunSortAndForEachAgentParallelDynamic() {
   for (auto b : batch_sizes) {
     RunSortAndForEachAgentParallelDynamic(num_threads * 1000, b);
   }
-}
-
-inline void RunIOTest() {
-  const real_t kEpsilon = abs_error<real_t>::value;
-  Simulation simulation("ResourceManagerTest-RunIOTest");
-  auto* rm = simulation.GetResourceManager();
-
-  auto ref_uid = AgentUid(simulation.GetAgentUidGenerator()->GetHighestIndex());
-  remove(ROOTFILE);
-
-  // setup
-  rm->AddAgent(new A(12));
-  rm->AddAgent(new A(34));
-  rm->AddAgent(new A(42));
-
-  rm->AddAgent(new B(3.14));
-  rm->AddAgent(new B(6.28));
-
-  DiffusionGrid* dgrid_1 = new EulerGrid(0, "Kalium", 0.4, 0, 2);
-  DiffusionGrid* dgrid_2 = new EulerGrid(1, "Natrium", 0.2, 0.1, 1);
-  rm->AddContinuum(dgrid_1);
-  rm->AddContinuum(dgrid_2);
-
-  // backup
-  WritePersistentObject(ROOTFILE, "rm", *rm, "new");
-
-  rm->ClearAgents();
-
-  // restore
-  ResourceManager* restored_rm = nullptr;
-  GetPersistentObject(ROOTFILE, "rm", restored_rm);
-  restored_rm->RebuildAgentUidMap();
-
-  // validate
-  EXPECT_EQ(5u, restored_rm->GetNumAgents());
-
-  EXPECT_EQ(12, dynamic_cast<A*>(restored_rm->GetAgent(ref_uid))->GetData());
-  EXPECT_EQ(34,
-            dynamic_cast<A*>(restored_rm->GetAgent(ref_uid + 1))->GetData());
-  EXPECT_EQ(42,
-            dynamic_cast<A*>(restored_rm->GetAgent(ref_uid + 2))->GetData());
-
-  EXPECT_NEAR(3.14,
-              dynamic_cast<B*>(restored_rm->GetAgent(ref_uid + 3))->GetData(),
-              kEpsilon);
-  EXPECT_NEAR(6.28,
-              dynamic_cast<B*>(restored_rm->GetAgent(ref_uid + 4))->GetData(),
-              kEpsilon);
-
-  EXPECT_EQ(0, restored_rm->GetDiffusionGrid(0)->GetContinuumId());
-  EXPECT_EQ(1, restored_rm->GetDiffusionGrid(1)->GetContinuumId());
-  EXPECT_EQ("Kalium", restored_rm->GetDiffusionGrid(0)->GetContinuumName());
-  EXPECT_EQ("Natrium", restored_rm->GetDiffusionGrid(1)->GetContinuumName());
-  EXPECT_EQ(real_t(0.6),
-            restored_rm->GetDiffusionGrid(0)->GetDiffusionCoefficients()[0]);
-  EXPECT_EQ(real_t(0.8),
-            restored_rm->GetDiffusionGrid(1)->GetDiffusionCoefficients()[0]);
-
-  delete restored_rm;
-
-  remove(ROOTFILE);
 }
 
 }  // namespace bdm

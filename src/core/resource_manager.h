@@ -40,7 +40,6 @@
 #include "core/simulation.h"
 #include "core/type_index.h"
 #include "core/util/numa.h"
-#include "core/util/root.h"
 #include "core/util/thread_info.h"
 #include "core/util/type.h"
 
@@ -52,53 +51,14 @@ namespace bdm {
 /// simulation.
 class ResourceManager {
  public:
-  explicit ResourceManager(TRootIOCtor* r) {}
-
   ResourceManager();
 
   virtual ~ResourceManager();
 
-  ResourceManager& operator=(ResourceManager&& other) noexcept {
-    if (agents_.size() != other.agents_.size()) {
-      Log::Fatal(
-          "Restored ResourceManager has different number of NUMA nodes.");
-    }
-    for (auto& el : continuum_models_) {
-      delete el.second;
-    }
-    for (auto& numa_agents : agents_) {
-      for (auto* agent : numa_agents) {
-        delete agent;
-      }
-    }
-    agents_ = std::move(other.agents_);
-    agents_lb_.resize(agents_.size());
-    continuum_models_ = std::move(other.continuum_models_);
-
-    RebuildAgentUidMap();
-    // restore type_index_
-    if (type_index_) {
-      for (auto& numa_agents : agents_) {
-        for (auto* agent : numa_agents) {
-          type_index_->Add(agent);
-        }
-      }
-    }
-    return *this;
-  }
-
-  void RebuildAgentUidMap() {
-    // rebuild uid_ah_map_
-    uid_ah_map_.clear();
-    auto* agent_uid_generator = Simulation::GetActive()->GetAgentUidGenerator();
-    uid_ah_map_.resize(agent_uid_generator->GetHighestIndex() + 1);
-    for (AgentHandle::NumaNode_t n = 0; n < agents_.size(); ++n) {
-      for (AgentHandle::ElementIdx_t i = 0; i < agents_[n].size(); ++i) {
-        auto* agent = agents_[n][i];
-        this->uid_ah_map_.Insert(agent->GetUid(), AgentHandle(n, i));
-      }
-    }
-  }
+  ResourceManager(const ResourceManager&) = delete;
+  ResourceManager& operator=(const ResourceManager&) = delete;
+  ResourceManager(ResourceManager&&) = delete;
+  ResourceManager& operator=(ResourceManager&&) = delete;
 
   Agent* GetAgent(const AgentUid& uid) {
     if (!uid_ah_map_.Contains(uid)) {
@@ -431,20 +391,21 @@ class ResourceManager {
   /// not overlap!
   virtual void AddAgents(typename AgentHandle::NumaNode_t numa_node,
                          uint64_t offset,
-                         const std::vector<Agent*>& new_agents) {
+                         std::vector<std::unique_ptr<Agent>>& new_agents) {
     uint64_t i = 0;
-    for (auto* agent : new_agents) {
+    for (auto& new_agent : new_agents) {
+      auto* agent = new_agent.get();
       auto uid = agent->GetUid();
       uid_ah_map_.Insert(
           uid, AgentHandle(numa_node,
                            static_cast<AgentHandle::ElementIdx_t>(offset + i)));
-      agents_[numa_node][offset + i] = agent;
+      agents_[numa_node][offset + i] = new_agent.release();
       i++;
     }
     if (type_index_) {
 #pragma omp critical
-      for (auto* agent : new_agents) {
-        type_index_->Add(agent);
+      for (uint64_t j = 0; j < new_agents.size(); ++j) {
+        type_index_->Add(agents_[numa_node][offset + j]);
       }
     }
 #pragma omp single
@@ -498,13 +459,13 @@ class ResourceManager {
   void MarkEnvironmentOutOfSync() const;
 
   /// Maps an AgentUid to its storage location in `agents_` \n
-  AgentUidMap<AgentHandle> uid_ah_map_ = AgentUidMap<AgentHandle>(100u);  //!
+  AgentUidMap<AgentHandle> uid_ah_map_ = AgentUidMap<AgentHandle>(100u);
   /// Pointer container for all agents
   std::vector<std::vector<Agent*>> agents_;
   /// Container used during load balancing
-  std::vector<std::vector<Agent*>> agents_lb_;  //!
+  std::vector<std::vector<Agent*>> agents_lb_;
 
-  ThreadInfo* thread_info_ = ThreadInfo::GetInstance();  //!
+  ThreadInfo* thread_info_ = ThreadInfo::GetInstance();
 
   TypeIndex* type_index_ = nullptr;
 
@@ -514,16 +475,13 @@ class ResourceManager {
   };
 
   /// auxiliary data required for parallel agent removal
-  ParallelRemovalAuxData parallel_remove_;  //!
+  ParallelRemovalAuxData parallel_remove_;
 
-  friend class SimulationBackup;
   friend std::ostream& operator<<(std::ostream& os, const ResourceManager& rm);
 
  private:
   /// Maps a continuum ID to the pointer to the continuum models
   std::unordered_map<uint64_t, Continuum*> continuum_models_;
-
-  BDM_CLASS_DEF_NV(ResourceManager, 2);
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ResourceManager& rm) {
