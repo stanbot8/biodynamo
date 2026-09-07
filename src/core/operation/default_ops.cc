@@ -41,7 +41,7 @@ BDM_REGISTER_OP(MechanicalForcesOpCuda, "mechanical forces", kCuda);
 
 BDM_REGISTER_OP(DividingCellOp, "DividingCellOp", kCpu);
 
-#if defined(USE_OPENCL) && !defined(__ROOTCLING__)
+#ifdef USE_OPENCL
 BDM_REGISTER_OP(MechanicalForcesOpOpenCL, "mechanical forces", kOpenCl);
 #endif
 

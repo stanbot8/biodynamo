@@ -21,7 +21,8 @@ namespace bdm {
 
 void RunAllChecks(const ThreadInfo& ti) {
   EXPECT_EQ(omp_get_max_threads(), ti.GetMaxThreads());
-  EXPECT_EQ(numa_num_configured_nodes(), ti.GetNumaNodes());
+  EXPECT_EQ(ti.IsNumaAvailable() ? numa_num_configured_nodes() : 1,
+            ti.GetNumaNodes());
 
   std::vector<int> threads_per_numa(ti.GetNumaNodes());
   std::vector<std::set<int>> all_numa_thread_ids(ti.GetNumaNodes());
@@ -30,7 +31,14 @@ void RunAllChecks(const ThreadInfo& ti) {
 #pragma omp critical
     {
       int tid = omp_get_thread_num();
-      auto nid = numa_node_of_cpu(sched_getcpu());
+#ifdef USE_NUMA
+      unsigned int nid = 0;
+      if (ti.IsNumaAvailable()) {
+        EXPECT_EQ(0, getcpu(nullptr, &nid));
+      }
+#else
+      unsigned int nid = 0;
+#endif
       // check if mappting openmp thread id to numa node is correct
       EXPECT_EQ(nid, ti.GetNumaNode(tid));
       auto numa_thread_id = ti.GetNumaThreadId(tid);

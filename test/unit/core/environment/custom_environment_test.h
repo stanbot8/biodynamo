@@ -24,9 +24,8 @@
 
 namespace bdm {
 
-// Needs to be in a separate header to be included in dictionary generation
 class APerson : public Cell {
-  BDM_AGENT_HEADER(APerson, Cell, 1);
+  BDM_AGENT_HEADER(APerson, Cell);
 
  public:
   APerson() = default;

@@ -23,18 +23,7 @@
 #include <typeinfo>
 #include <vector>
 
-#include "core/util/io.h"
 #include "core/util/log.h"
-#include "core/util/root.h"
-
-#include "Rtypes.h"
-
-// Only used for our custom streamer
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-#include "TBuffer.h"
-#include "TClassTable.h"
-#include "TObject.h"
-#endif
 
 namespace bdm {
 
@@ -154,7 +143,6 @@ class InlineVector final {
   using const_iterator =
       typename InlineVector::template Iterator<const T, const InlineVector>;
 
-  explicit InlineVector(TRootIOCtor* io_ctor) {}  // Constructor for ROOT I/O
   InlineVector() = default;
 
   InlineVector(const InlineVector<T, N>& other) {
@@ -348,10 +336,10 @@ class InlineVector final {
 
  private:
   static constexpr float kGrowFactor = 1.5;
-  std::array<T, N> data_;       //!
-  uint16_t size_ = 0;           //!
-  uint16_t heap_capacity_ = 0;  //!
-  T* heap_data_ = nullptr;      //!
+  std::array<T, N> data_;
+  uint16_t size_ = 0;
+  uint16_t heap_capacity_ = 0;
+  T* heap_data_ = nullptr;
 
   uint16_t HeapSize() const {
     if (size_ < N) {
@@ -359,33 +347,7 @@ class InlineVector final {
     }
     return size_ - N;
   }
-
-  BDM_CLASS_DEF_NV(InlineVector, 2);  // NOLINT
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-template <typename T, uint16_t N>
-inline void InlineVector<T, N>::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    VectorTypeWrapper<T> vw;
-    R__b.ReadClassBuffer(VectorTypeWrapper<T>::Class(), &vw);
-    for (auto ve : vw.vector_) {
-      this->push_back(ve);
-    }
-  } else {
-    VectorTypeWrapper<T> vw;
-    vw.vector_.resize(size_);
-    for (uint16_t i = 0; i < size_; i++) {
-      vw.vector_[i] = (*this)[i];
-    }
-    R__b.WriteClassBuffer(VectorTypeWrapper<T>::Class(), &vw);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 }  // namespace bdm
 
