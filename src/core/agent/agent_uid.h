@@ -15,8 +15,10 @@
 #ifndef CORE_AGENT_AGENT_UID_H_
 #define CORE_AGENT_AGENT_UID_H_
 
+#include <cstdint>
+#include <functional>
 #include <limits>
-#include "core/util/root.h"
+#include <ostream>
 
 namespace bdm {
 
@@ -108,8 +110,6 @@ class AgentUid {
 
   /// Determines how often index_ has been resused
   Reused_t reused_;
-
-  BDM_CLASS_DEF_NV(AgentUid, 1);
 };
 
 }  // namespace bdm

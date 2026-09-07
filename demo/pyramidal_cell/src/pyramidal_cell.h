@@ -24,7 +24,7 @@ namespace bdm {
 enum Substances { kApical, kBasal };
 
 struct ApicalDendriteGrowth : public Behavior {
-  BDM_BEHAVIOR_HEADER(ApicalDendriteGrowth, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(ApicalDendriteGrowth, Behavior);
   ApicalDendriteGrowth() { AlwaysCopyToNew(); }
   virtual ~ApicalDendriteGrowth() {}
 
@@ -83,7 +83,7 @@ struct ApicalDendriteGrowth : public Behavior {
 };
 
 struct BasalDendriteGrowth : public Behavior {
-  BDM_BEHAVIOR_HEADER(BasalDendriteGrowth, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(BasalDendriteGrowth, Behavior);
   BasalDendriteGrowth() { AlwaysCopyToNew(); }
   virtual ~BasalDendriteGrowth() {}
 

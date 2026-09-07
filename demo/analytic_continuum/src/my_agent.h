@@ -23,7 +23,7 @@ namespace bdm {
 /// A simple agent that can sense the continuum value and stores the value in
 /// a member variable.
 class ContinuumRetrieverAgent : public SphericalAgent {
-  BDM_AGENT_HEADER(ContinuumRetrieverAgent, SphericalAgent, 1);
+  BDM_AGENT_HEADER(ContinuumRetrieverAgent, SphericalAgent);
 
  public:
   ContinuumRetrieverAgent() {}

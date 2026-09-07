@@ -33,7 +33,7 @@ namespace bdm {
 /// Without StatelessBehavior the following code would be required.
 /// \code
 /// struct RapidDivision : public Behavior {
-///   BDM_BEHAVIOR_HEADER(RapidDivision, Behavior, 1);
+///   BDM_BEHAVIOR_HEADER(RapidDivision, Behavior);
 ///
 ///   RapidDivision() = default;
 ///   virtual ~RapidDivision() = default;
@@ -44,7 +44,7 @@ namespace bdm {
 /// };
 /// \endcode
 class StatelessBehavior : public Behavior {
-  BDM_BEHAVIOR_HEADER(StatelessBehavior, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(StatelessBehavior, Behavior);
 
  public:
   using FPtr = void (*)(Agent*);
@@ -67,29 +67,8 @@ class StatelessBehavior : public Behavior {
   }
 
  private:
-  FPtr fptr_;  //!
+  FPtr fptr_;
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-// The custom streamer is needed because ROOT can't stream function pointers
-// by default.
-inline void StatelessBehavior::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    R__b.ReadClassBuffer(StatelessBehavior::Class(), this);
-    Long64_t l;
-    R__b.ReadLong64(l);
-    this->fptr_ = reinterpret_cast<StatelessBehavior::FPtr>(l);
-  } else {
-    R__b.WriteClassBuffer(StatelessBehavior::Class(), this);
-    Long64_t l = reinterpret_cast<Long64_t>(this->fptr_);
-    R__b.WriteLong64(l);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 }  // namespace bdm
 

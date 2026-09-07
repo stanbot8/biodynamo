@@ -33,7 +33,6 @@
 #include "core/simulation.h"
 #include "core/util/log.h"
 #include "core/util/macros.h"
-#include "core/util/root.h"
 #include "core/util/type.h"
 
 namespace bdm {
@@ -41,8 +40,6 @@ namespace bdm {
 Agent::Agent() {
   uid_ = Simulation::GetActive()->GetAgentUidGenerator()->GenerateUid();
 }
-
-Agent::Agent(TRootIOCtor* io_ctor) {}
 
 Agent::Agent(const Agent& other)
     : uid_(other.uid_),
@@ -121,6 +118,24 @@ void Agent::AssignNewUid() {
 }
 
 const AgentUid& Agent::GetUid() const { return uid_; }
+
+bool Agent::GetVisualizationData(const std::string& name,
+                                 VisualizationData* values) const {
+  if (name == "position_") {
+    const auto& position = GetPosition();
+    *values = std::vector<real_t>(position.begin(), position.end());
+    return true;
+  }
+  if (name == "diameter_") {
+    *values = std::vector<real_t>{GetDiameter()};
+    return true;
+  }
+  if (name == "uid_") {
+    *values = std::vector<uint64_t>{GetUid()};
+    return true;
+  }
+  return false;
+}
 
 uint32_t Agent::GetBoxIdx() const { return box_idx_; }
 

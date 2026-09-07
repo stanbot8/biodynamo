@@ -19,27 +19,22 @@
 
 #include "core/behavior/behavior.h"
 
-#ifndef __ROOTCLING__
 #include "boost/numeric/odeint.hpp"
 #include "boost/phoenix/core.hpp"
 #include "boost/phoenix/operator.hpp"
-#endif
 
-#ifndef __ROOTCLING__
 typedef boost::numeric::ublas::vector<double> b_vector_t;
 typedef boost::numeric::ublas::matrix<double> b_matrix_t;
-#endif
 
 namespace bdm {
 
 enum class ODE_solver { Euler, Rosenbrock, RungeKutta };
 
 class RegulatoryNetwork : public Behavior {
-  BDM_BEHAVIOR_HEADER(RegulatoryNetwork, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(RegulatoryNetwork, Behavior);
 
  public:
   RegulatoryNetwork() { AlwaysCopyToNew(); }
-#ifndef __ROOTCLING__
   RegulatoryNetwork(
       real_t dt, int n_dt, const std::vector<real_t>& x, ODE_solver m,
       const std::function<void(const b_vector_t&, b_vector_t&, real_t, Agent*)>&
@@ -58,7 +53,6 @@ class RegulatoryNetwork : public Behavior {
     out_ = out;
     method_ = m;
   }
-#endif
   virtual ~RegulatoryNetwork() = default;
 
   void Initialize(const NewAgentEvent& event) override {
@@ -66,35 +60,28 @@ class RegulatoryNetwork : public Behavior {
 
     if (auto* other =
             dynamic_cast<RegulatoryNetwork*>(event.existing_behavior)) {
-#ifndef __ROOTCLING__
       current_time_ = other->current_time_;
       current_species_ = other->current_species_;
       previous_species_ = other->previous_species_;
-#endif
 
       time_step_ = other->time_step_;
       time_subdivision_ = other->time_subdivision_;
 
-#ifndef __ROOTCLING__
       rhs_ = other->rhs_;
       jacob_ = other->jacob_;
       out_ = other->out_;
       method_ = other->method_;
-#endif
     } else {
       Log::Fatal("RegulatoryNetwork::EventConstructor",
                  "other was not of type RegulatoryNetwork");
     }
   }
 
-#ifndef __ROOTCLING__
   const size_t GetNumberOfSpecies() const { return current_species_.size(); }
   const b_vector_t& GetSpecies() const { return current_species_; }
   const real_t& GetSpecie(size_t i) const { return current_species_[i]; }
-#endif
 
   void Run(Agent* agent) override {
-#ifndef __ROOTCLING__
     // update the previous solution
     previous_species_ = current_species_;
 
@@ -153,14 +140,9 @@ class RegulatoryNetwork : public Behavior {
 
     // print-out the results
     out_(current_species_, current_time_, agent);
-#else
-    Log::Fatal("RegulatoryNetwork::Run",
-               "this behavior is supported only with \"boost\" installed");
-#endif
   };
 
  protected:
-#ifndef __ROOTCLING__
   void SetInitialSpecies(const std::vector<real_t>& x) {
     const size_t n_species = x.size();
 
@@ -169,7 +151,6 @@ class RegulatoryNetwork : public Behavior {
     for (size_t i = 0; i < n_species; i++)
       current_species_[i] = previous_species_[i] = x[i];
   }
-#endif
 
  private:
   /// Pseudo-time for ODE(s) time integration
@@ -177,22 +158,18 @@ class RegulatoryNetwork : public Behavior {
   /// Time-step for ODE(s) time integration
   real_t time_step_ = 1.0;
   int time_subdivision_ = 100;
-#ifndef __ROOTCLING__
   /// Current solution of the species concentration
   b_vector_t current_species_ = {};
   /// Previous solution of the species concentration
   b_vector_t previous_species_ = {};
   /// Method used for the ODE(s) numerical solution
   ODE_solver method_;
-#endif
 
-#ifndef __ROOTCLING__
   std::function<void(const b_vector_t&, b_vector_t&, real_t, Agent*)> rhs_;
   std::function<void(const b_vector_t&, b_matrix_t&, real_t, b_vector_t&,
                      Agent*)>
       jacob_;
   std::function<void(const b_vector_t&, real_t, Agent*)> out_;
-#endif
 };
 
 }  // namespace bdm

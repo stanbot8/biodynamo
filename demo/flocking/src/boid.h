@@ -50,7 +50,7 @@ real_t FluctuateCoefficient(real_t coefficient, real_t fluctuation_strength,
 ////////////////////////////////////////////////////////////////////////////////
 
 class Boid : public Agent {
-  BDM_AGENT_HEADER(Boid, Agent, 1);
+  BDM_AGENT_HEADER(Boid, Agent);
 
  public:
   Boid() {}
@@ -171,13 +171,13 @@ class Boid : public Agent {
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Flocking : public Behavior {
-  BDM_BEHAVIOR_HEADER(Flocking, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(Flocking, Behavior);
 
   void Run(Agent* agent) override;
 };
 
 struct RandomPerturbation : public Behavior {
-  BDM_BEHAVIOR_HEADER(RandomPerturbation, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(RandomPerturbation, Behavior);
 
  public:
   RandomPerturbation(real_t v = 1) : velocity_(v) { AlwaysCopyToNew(); }

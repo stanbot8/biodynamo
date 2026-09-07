@@ -15,8 +15,9 @@
 #ifndef CORE_AGENT_AGENT_HANDLE_H_
 #define CORE_AGENT_AGENT_HANDLE_H_
 
+#include <cstdint>
 #include <limits>
-#include "core/util/root.h"
+#include <ostream>
 
 namespace bdm {
 
@@ -72,8 +73,6 @@ class AgentHandle {
   /// changed element index to uint32_t after issues with std::atomic with
   /// size 16 -> max element_idx: 4.294.967.296
   ElementIdx_t element_idx_;
-
-  BDM_CLASS_DEF_NV(AgentHandle, 1);
 };
 
 }  // namespace bdm

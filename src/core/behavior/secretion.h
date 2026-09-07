@@ -26,7 +26,7 @@ namespace bdm {
 
 /// Secrete substance at Agent position
 class Secretion : public Behavior {
-  BDM_BEHAVIOR_HEADER(Secretion, Behavior, 2);
+  BDM_BEHAVIOR_HEADER(Secretion, Behavior);
 
  public:
   Secretion() = default;

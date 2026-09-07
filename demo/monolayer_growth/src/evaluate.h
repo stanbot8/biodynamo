@@ -15,15 +15,12 @@
 #ifndef EVALUATE_H_
 #define EVALUATE_H_
 
-#include <TAxis.h>
-#include <TLegend.h>
-#include <TMultiGraph.h>
 #include <cmath>
+#include <fstream>
+#include <string>
 #include <vector>
 #include "biodynamo.h"
 #include "sim_param.h"
-
-using namespace bdm::experimental;
 
 namespace bdm {
 
@@ -56,46 +53,27 @@ inline void SetupResultCollection(Simulation* sim) {
   ts->AddCollector("env_dims", get_env_dims, get_time);
 }
 
-inline void ExportResults(const bool plot_legend = true,
-                          const std::string& filename = "result") {
-  // Prerequisites
+inline void ExportResults(const std::string& filename = "result.csv") {
   const std::string folder = Simulation::GetActive()->GetOutputDir();
   auto* ts = Simulation::GetActive()->GetTimeSeries();
-  TimeSeries allts;
-  std::vector<real_t> times, sizes;
-
-  // Add simulated data
-  allts.Add(*ts, Concat("i", 0));
-  times = ts->GetXValues("env_dims");
-  sizes = ts->GetYValues("env_dims");
-
-  // Add experimental data from Figure 1 from Drasdo and Hoehme (2005)
-  allts.Add("experimental_data",
-            {336 / 24., 386 / 24., 408 / 24., 481 / 24., 506 / 24., 646 / 24.},
-            {1140, 1400, 1590, 2040, 2250, 3040});
-
-  // Initialize line graph
-  LineGraph lg(&allts, "", "Time [days]", "2D Monolayer size (um)", plot_legend,
-               nullptr, 350, 250);
-
-  // Add simulated data
-  lg.Add(Concat("env_dims-i", 0), "Sim data ", "LP", kBlue, 0.2, kSolid, 2,
-         kBlue, 0.7, kFullCircle, 0.5);
-
-  // Add style for exp data
-  lg.Add("experimental_data", "Exp data ", "LP", kBlack, 0.2, kSolid, 2, kBlack,
-         0.7, kFullCircle, 0.5);
-
-  // Add legend
-  if (plot_legend) {
-    lg.SetLegendPosNDC(0.1, 0.7, 0.3, 0.9);
+  const auto& times = ts->GetXValues("env_dims");
+  const auto& sizes = ts->GetYValues("env_dims");
+  std::ofstream output(Concat(folder, "/", filename));
+  output << "source,time_days,size_um\n";
+  for (size_t i = 0; i < times.size(); ++i) {
+    output << "simulation," << times[i] << ',' << sizes[i] << '\n';
   }
 
-  // Save plot
-  lg.SaveAs(Concat(folder, "/", filename), {".svg", ".png"});
-
-  // Save data
-  ts->SaveJson(Concat(folder, "/monolayer_growth.json"));
+  constexpr real_t kHoursPerDay = 24.0;
+  const std::vector<real_t> experimental_times = {
+      336 / kHoursPerDay, 386 / kHoursPerDay, 408 / kHoursPerDay,
+      481 / kHoursPerDay, 506 / kHoursPerDay, 646 / kHoursPerDay};
+  const std::vector<real_t> experimental_sizes = {1140, 1400, 1590,
+                                                  2040, 2250, 3040};
+  for (size_t i = 0; i < experimental_times.size(); ++i) {
+    output << "experiment," << experimental_times[i] << ','
+           << experimental_sizes[i] << '\n';
+  }
 }
 
 }  // namespace bdm

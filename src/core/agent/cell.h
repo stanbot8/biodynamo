@@ -38,7 +38,7 @@
 namespace bdm {
 
 class Cell : public Agent {
-  BDM_AGENT_HEADER(Cell, Agent, 1);
+  BDM_AGENT_HEADER(Cell, Agent);
 
  public:
   /// First axis of the local coordinate system.
@@ -190,6 +190,28 @@ class Cell : public Agent {
   const Real3& GetTractorForce() const { return tractor_force_; }
 
   real_t GetVolume() const { return volume_; }
+
+  bool GetVisualizationData(const std::string& name,
+                            VisualizationData* values) const override {
+    if (name == "volume_") {
+      *values = std::vector<real_t>{volume_};
+      return true;
+    }
+    if (name == "density_") {
+      *values = std::vector<real_t>{density_};
+      return true;
+    }
+    if (name == "adherence_") {
+      *values = std::vector<real_t>{adherence_};
+      return true;
+    }
+    if (name == "tractor_force_") {
+      *values =
+          std::vector<real_t>(tractor_force_.begin(), tractor_force_.end());
+      return true;
+    }
+    return Base::GetVisualizationData(name, values);
+  }
 
   void SetAdherence(real_t adherence) {
     if (adherence < adherence_) {

@@ -24,7 +24,6 @@
 #include "core/container/shared_data.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"
-#include "core/util/root.h"
 #include "core/util/spinlock.h"
 
 namespace bdm {
@@ -67,33 +66,12 @@ class AgentUidGenerator {
   void Update() { tl_uids_.resize(tinfo_->GetMaxThreads()); }
 
  private:
-  std::atomic<typename AgentUid::Index_t> counter_;  //!
-  /// ROOT can't persist std::atomic.
-  /// Therefore this additional helper variable is needed.
-  typename AgentUid::Index_t root_counter_;
+  std::atomic<typename AgentUid::Index_t> counter_;
 
   /// Thread local vector of AgentUids that can be reused
   SharedData<std::vector<AgentUid>> tl_uids_;
-  ThreadInfo* tinfo_ = nullptr;  //!
-
-  BDM_CLASS_DEF_NV(AgentUidGenerator, 1);
+  ThreadInfo* tinfo_ = nullptr;
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-inline void AgentUidGenerator::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    R__b.ReadClassBuffer(AgentUidGenerator::Class(), this);
-    this->counter_ = this->root_counter_;
-  } else {
-    this->root_counter_ = this->counter_.load();
-    R__b.WriteClassBuffer(AgentUidGenerator::Class(), this);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 }  // namespace bdm
 

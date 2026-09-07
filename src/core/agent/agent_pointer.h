@@ -23,7 +23,6 @@
 #include "core/agent/agent_uid.h"
 #include "core/execution_context/execution_context.h"
 #include "core/simulation.h"
-#include "core/util/root.h"
 
 namespace bdm {
 
@@ -240,7 +239,7 @@ class AgentPointer {
   };
 
  private:
-  Data d_ = {AgentUid()};  //!
+  Data d_ = {AgentUid()};
 
   template <typename TFrom, typename TTo>
   typename std::enable_if<std::is_base_of<TFrom, TTo>::value, TTo*>::type Cast(
@@ -253,42 +252,7 @@ class AgentPointer {
       TFrom* agent) const {
     return dynamic_cast<TTo*>(agent);
   }
-
-  BDM_CLASS_DEF_NV(AgentPointer, 3);
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-template <typename TAgent>
-inline void AgentPointer<TAgent>::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    R__b.ReadClassBuffer(AgentPointer::Class(), this);
-    AgentUid restored_uid;
-    R__b.ReadClassBuffer(AgentUid::Class(), &restored_uid);
-    if (gAgentPointerMode == AgentPointerMode::kIndirect) {
-      d_.uid = restored_uid;
-    } else if (restored_uid != AgentUid()) {
-      auto* ctxt = Simulation::GetActive()->GetExecutionContext();
-      d_.agent = Cast<Agent, TAgent>(ctxt->GetAgent(restored_uid));
-    } else {
-      d_.agent = nullptr;
-    }
-  } else {
-    R__b.WriteClassBuffer(AgentPointer::Class(), this);
-    AgentUid uid;
-    if (gAgentPointerMode == AgentPointerMode::kIndirect) {
-      uid = d_.uid;
-      R__b.WriteClassBuffer(AgentUid::Class(), &d_.uid);
-    } else if (d_.agent != nullptr) {
-      uid = d_.agent->GetUid();
-    }
-    R__b.WriteClassBuffer(AgentUid::Class(), &uid);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 template <typename T>
 struct is_agent_ptr {                   // NOLINT

@@ -24,6 +24,7 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "core/agent/agent_pointer.h"
@@ -34,7 +35,6 @@
 #include "core/interaction_force.h"
 #include "core/shape.h"
 #include "core/util/macros.h"
-#include "core/util/root.h"
 #include "core/util/spinlock.h"
 #include "core/util/type.h"
 
@@ -43,18 +43,9 @@ namespace bdm {
 /// Macro to insert required boilerplate code into agent
 /// @param   class_name scalar class name of the agent
 /// @param   base_class scalar class name of the base agent
-/// @param   class_version_id required for ROOT I/O (see ROOT BDM_CLASS_DEF
-///          Macro).
-///          Every time the layout of the class is changed, class_version_id
-///          must be incremented by one. The class_version_id should be greater
-///          or equal to 1.
-/// @param  ...: List of all data members of this class
-#define BDM_AGENT_HEADER(class_name, base_class, class_version_id)           \
+#define BDM_AGENT_HEADER(class_name, base_class)                             \
  public:                                                                     \
   using Base = base_class;                                                   \
-                                                                             \
-  explicit class_name(TRootIOCtor* io_ctor) {}                               \
-                                                                             \
   /** Create a new instance of this object using the default constructor. */ \
   Agent* New() const override { return new class_name(); }                   \
   /** Create a new instance of this object using the copy constructor. */    \
@@ -67,20 +58,19 @@ namespace bdm {
   Base* UpCast() { return static_cast<Base*>(this); }                        \
                                                                              \
   /** Cast `this` to the base class pointer (one level up) */                \
-  const Base* UpCast() const { return static_cast<const Base*>(this); }      \
-                                                                             \
-  BDM_CLASS_DEF_OVERRIDE(class_name, class_version_id)
+  const Base* UpCast() const { return static_cast<const Base*>(this); }
 
 // -----------------------------------------------------------------------------
 
 class Behavior;
 
+using VisualizationData =
+    std::variant<std::vector<real_t>, std::vector<int>, std::vector<uint64_t>>;
+
 /// Contains code required by all agents
 class Agent {
  public:
   Agent();
-
-  explicit Agent(TRootIOCtor* io_ctor);
 
   Agent(const Agent& other);
 
@@ -140,6 +130,10 @@ class Agent {
   virtual std::set<std::string> GetRequiredVisDataMembers() const {
     return {"position_", "diameter_"};
   }
+
+  /// Copies one typed visualization value into `values`.
+  virtual bool GetVisualizationData(const std::string& name,
+                                    VisualizationData* values) const;
 
   virtual void RunDiscretization();
 
@@ -287,19 +281,19 @@ class Agent {
   }
 
  private:
-  Spinlock lock_;  //!
+  Spinlock lock_;
 
   /// Helper variable used to support removal of behaviors while
   /// `RunBehaviors` iterates over them.
   uint16_t run_behavior_loop_idx_ = 0;
 
   /// If an agent is static, we should not compute the mechanical forces
-  bool is_static_ = false;  //!
+  bool is_static_ = false;
   /// If an agent becomes non-static (i.e. it moved or grew), we should set this
   /// flag to true to also compute mechanical forces on the neighboring agents
-  bool propagate_staticness_neighborhood_ = true;  //!
+  bool propagate_staticness_neighborhood_ = true;
   /// Flag to determine of an agent is static in the next timestep
-  mutable bool is_static_next_ts_ = false;  //!
+  mutable bool is_static_next_ts_ = false;
 
   /// Function to copy behaviors from existing Agent to this one
   /// and to initialize them.
@@ -314,8 +308,6 @@ class Agent {
   /// This function sets the attributes `NewAgentEvent::existing_behavior`
   /// and `NewAgentEvent::new_behaviors` to their correct value.
   void UpdateBehaviors(const NewAgentEvent& event);
-
-  BDM_CLASS_DEF(Agent, 1)
 };
 
 }  // namespace bdm

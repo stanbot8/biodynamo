@@ -17,19 +17,21 @@
 #include "core/resource_manager.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"
-#include "unit/test_util/io_test.h"
 #include "unit/test_util/test_agent.h"
 #include "unit/test_util/test_util.h"
 
 namespace bdm {
 namespace experimental {
 
+constexpr uint64_t kAgentCount = 2000;
+constexpr uint64_t kAgentDataSum = kAgentCount * (kAgentCount - 1) / 2;
+
 // -----------------------------------------------------------------------------
 TEST(Reduce, Reduce) {
   Simulation sim(TEST_NAME);
   auto* rm = sim.GetResourceManager();
 
-  for (uint64_t i = 0; i < 2000; ++i) {
+  for (uint64_t i = 0; i < kAgentCount; ++i) {
     auto* a = new TestAgent();
     a->SetData(i);
     rm->AddAgent(a);
@@ -40,7 +42,7 @@ TEST(Reduce, Reduce) {
   });
   SumReduction<uint64_t> combine_tl_results;
   auto result = Reduce(&sim, sum_data, combine_tl_results);
-  EXPECT_EQ(1999000u, result);
+  EXPECT_EQ(kAgentDataSum, result);
 }
 
 // -----------------------------------------------------------------------------
@@ -48,7 +50,7 @@ TEST(Reduce, GenericReducer) {
   Simulation sim(TEST_NAME);
   auto* rm = sim.GetResourceManager();
 
-  for (uint64_t i = 0; i < 2000; ++i) {
+  for (uint64_t i = 0; i < kAgentCount; ++i) {
     auto* a = new TestAgent();
     a->SetData(i);
     rm->AddAgent(a);
@@ -70,7 +72,7 @@ TEST(Reduce, GenericReducer) {
     GenericReducer<uint64_t> reducer(sum_data, combine_tl_results);
     rm->ForEachAgentParallel(reducer);
     auto result = reducer.GetResult();
-    EXPECT_EQ(1999000u, result);
+    EXPECT_EQ(kAgentDataSum, result);
   }
 
   // with filter, without post processing
@@ -180,70 +182,6 @@ TEST(Reduce, Counter) {
     EXPECT_NEAR(434.782608696, result, abs_error<real_t>::value);
   }
 }
-
-#ifdef USE_DICT
-// -----------------------------------------------------------------------------
-TEST_F(IOTest, GenericReducer) {
-  Simulation sim(TEST_NAME);
-  auto* rm = sim.GetResourceManager();
-
-  for (uint64_t i = 0; i < 2000; ++i) {
-    auto* a = new TestAgent();
-    a->SetData(i);
-    rm->AddAgent(a);
-  }
-
-  auto sum_data = [](Agent* agent, uint64_t* tl_result) {
-    *tl_result += bdm_static_cast<TestAgent*>(agent)->GetData();
-  };
-  auto combine_tl_results = [](const SharedData<uint64_t>& tl_results) {
-    uint64_t result = 0;
-    for (auto& el : tl_results) {
-      result += el;
-    }
-    return result;
-  };
-  auto post_process = [](uint64_t result) { return result / 2; };
-  auto filter = [](Agent* a) {
-    return bdm_static_cast<TestAgent*>(a)->GetData() <= 1000;
-  };
-  GenericReducer<uint64_t> reducer(sum_data, combine_tl_results, filter,
-                                   post_process);
-
-  GenericReducer<uint64_t>* restored;
-  BackupAndRestore(reducer, &restored);
-
-  rm->ForEachAgentParallel(*restored);
-  auto result = restored->GetResult();
-  EXPECT_EQ(250250u, result);
-}
-
-// -----------------------------------------------------------------------------
-TEST_F(IOTest, Counter) {
-  Simulation sim(TEST_NAME);
-  auto* rm = sim.GetResourceManager();
-
-  for (uint64_t i = 0; i < 2000; ++i) {
-    auto* a = new TestAgent();
-    a->SetData(i);
-    rm->AddAgent(a);
-  }
-
-  auto data_lt_1000 = [](Agent* agent) {
-    return bdm_static_cast<TestAgent*>(agent)->GetData() < 1000;
-  };
-  auto post_process = [](uint64_t result) { return result / 2; };
-  Counter<> counter(data_lt_1000, post_process);
-
-  Counter<>* restored;
-  BackupAndRestore(counter, &restored);
-
-  rm->ForEachAgentParallel(*restored);
-  auto result = restored->GetResult();
-  EXPECT_EQ(500u, result);
-}
-
-#endif  // USE_DICT
 
 }  // namespace experimental
 }  // namespace bdm

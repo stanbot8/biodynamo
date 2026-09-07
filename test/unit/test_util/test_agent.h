@@ -22,7 +22,7 @@
 namespace bdm {
 
 class TestAgent : public Agent {
-  BDM_AGENT_HEADER(TestAgent, Agent, 1);
+  BDM_AGENT_HEADER(TestAgent, Agent);
 
  public:
   TestAgent() = default;
