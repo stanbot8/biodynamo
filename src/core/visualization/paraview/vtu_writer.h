@@ -12,22 +12,20 @@
 //
 // -----------------------------------------------------------------------------
 
-#ifndef CORE_VISUALIZATION_PARAVIEW_PARALLEL_VTU_WRITER_H_
-#define CORE_VISUALIZATION_PARAVIEW_PARALLEL_VTU_WRITER_H_
+#ifndef CORE_VISUALIZATION_PARAVIEW_VTU_WRITER_H_
+#define CORE_VISUALIZATION_PARAVIEW_VTU_WRITER_H_
 
-// std
 #include <string>
-#include <vector>
-// Paraview
+
 #include <vtkUnstructuredGrid.h>
 
 namespace bdm {
 
-struct ParallelVtuWriter {
+struct VtuWriter {
   void operator()(const std::string& folder, const std::string& file_prefix,
-                  const std::vector<vtkUnstructuredGrid*>& grids) const;
+                  vtkUnstructuredGrid* grid) const;
 };
 
 }  // namespace bdm
 
-#endif  // CORE_VISUALIZATION_PARAVIEW_PARALLEL_VTU_WRITER_H_
+#endif  // CORE_VISUALIZATION_PARAVIEW_VTU_WRITER_H_

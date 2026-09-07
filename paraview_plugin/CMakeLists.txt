@@ -9,7 +9,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 find_package(MPI REQUIRED)
-find_package(ParaView REQUIRED)
+find_package(ParaView REQUIRED COMPONENTS
+             RemotingServerManager
+             VTKExtensionsFiltersGeneral)
 
 set("_paraview_plugin_default_${CMAKE_PROJECT_NAME}" ON)
 paraview_plugin_scan(

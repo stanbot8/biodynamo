@@ -14,29 +14,25 @@
 
 #include "core/visualization/paraview/vtk_agents.h"
 // std
-#include <algorithm>
 #include <set>
+#include <string>
+#include <type_traits>
 #include <vector>
 // ParaView
+#include <vtkAOSDataArrayTemplate.h>
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
+#include <vtkCellArray.h>
+#include <vtkCellType.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
-// ROOT
-#include <TClass.h>
-#include <TClassTable.h>
-#include <TDataMember.h>
 // BioDynaMo
 #include "core/agent/agent.h"
 #include "core/param/param.h"
 #include "core/shape.h"
 #include "core/simulation.h"
-#include "core/util/jit.h"
-#include "core/visualization/paraview/jit_helper.h"
-#include "core/visualization/paraview/parallel_vtu_writer.h"
-
-#include "core/agent/cell.h"
+#include "core/visualization/paraview/vtu_writer.h"
 
 namespace bdm {
 
@@ -44,61 +40,13 @@ namespace bdm {
 VtkAgents::VtkAgents(const char* type_name,
                      vtkCPDataDescription* data_description) {
   auto* param = Simulation::GetActive()->GetParam();
-  auto* tinfo = ThreadInfo::GetInstance();
-  if (param->export_visualization) {
-    data_.resize(tinfo->GetMaxThreads());
-  } else {
-    data_.resize(1);
-  }
-#pragma omp parallel for schedule(static, 1)
-  for (uint64_t i = 0; i < data_.size(); ++i) {
-    data_[i] = vtkUnstructuredGrid::New();
-  }
+  data_.push_back(vtkUnstructuredGrid::New());
   name_ = type_name;
 
   if (!param->export_visualization) {
     data_description->AddInput(type_name);
     data_description->GetInputDescriptionByName(type_name)->SetGrid(data_[0]);
   }
-
-  tclass_ = FindTClass();
-  auto* tmp_instance = static_cast<Agent*>(tclass_->New());
-  shape_ = tmp_instance->GetShape();
-  std::vector<std::string> data_members;
-  InitializeDataMembers(tmp_instance, &data_members);
-
-  JitForEachDataMemberFunctor jitcreate(
-      tclass_, data_members, "CreateVtkDataArrays",
-      [](const std::string& functor_name,
-         const std::vector<TDataMember*>& tdata_members) {
-        std::stringstream sstr;
-        sstr << "namespace bdm {\n\n"
-             << "struct R__CLING_PTRCHECK(off) " << functor_name
-             << " : public Functor<void, VtkAgents*, int> {\n"
-             << "  void operator()(VtkAgents* agent_grid, int tid) {\n";
-
-        for (auto* tdm : tdata_members) {
-          // example:
-          // { CreateVtkDataArray<Cell, Real3> f; f(tid, "position_", 123,
-          // agent_grid); }
-          sstr << "{ CreateVtkDataArray<" << tdm->GetClass()->GetName() << ", "
-               << tdm->GetTypeName() << ">f; f("
-               << "tid, \"" << tdm->GetName() << "\", " << tdm->GetOffset()
-               << ", agent_grid); }\n";
-        }
-
-        sstr << "  }\n";
-        sstr << "};\n\n";
-        sstr << "}  // namespace bdm\n";
-
-        return sstr.str();
-      });
-  jitcreate.Compile();
-  auto* create_functor = jitcreate.New<Functor<void, VtkAgents*, int>>();
-  for (uint64_t i = 0; i < data_.size(); ++i) {
-    (*create_functor)(this, i);
-  }
-  delete create_functor;
 }
 
 // -----------------------------------------------------------------------------
@@ -117,29 +65,14 @@ vtkUnstructuredGrid* VtkAgents::GetData(uint64_t idx) { return data_[idx]; }
 Shape VtkAgents::GetShape() const { return shape_; }
 
 // -----------------------------------------------------------------------------
-TClass* VtkAgents::GetTClass() { return tclass_; }
+const std::string& VtkAgents::GetTypeName() const { return name_; }
 
 // -----------------------------------------------------------------------------
 void VtkAgents::Update(const std::vector<Agent*>* agents) {
-  auto* param = Simulation::GetActive()->GetParam();
-  if (param->export_visualization) {
-#pragma omp parallel
-    {
-      auto* tinfo = ThreadInfo::GetInstance();
-      auto tid = tinfo->GetMyThreadId();
-      auto max_threads = tinfo->GetMaxThreads();
-
-      // use static scheduling for now
-      auto correction = agents->size() % max_threads == 0 ? 0 : 1;
-      auto chunk = agents->size() / max_threads + correction;
-      auto start = tid * chunk;
-      auto end = std::min(agents->size(), start + chunk);
-
-      UpdateMappedDataArrays(tid, agents, start, end);
-    }
-  } else {
-    UpdateMappedDataArrays(0, agents, 0, agents->size());
+  if (!agents->empty() && !metadata_initialized_) {
+    InitializeMetadata(*agents->front());
   }
+  UpdateGrid(0, agents, 0, agents->size());
 }
 
 // -----------------------------------------------------------------------------
@@ -147,56 +80,98 @@ void VtkAgents::WriteToFile(uint64_t step) const {
   auto* sim = Simulation::GetActive();
   auto filename_prefix = Concat(name_, "-", step);
 
-  ParallelVtuWriter writer;
-  writer(sim->GetOutputDir(), filename_prefix, data_);
+  VtuWriter writer;
+  writer(sim->GetOutputDir(), filename_prefix, data_[0]);
 }
 
 // -----------------------------------------------------------------------------
-void VtkAgents::UpdateMappedDataArrays(uint64_t tid,
-                                       const std::vector<Agent*>* agents,
-                                       uint64_t start, uint64_t end) {
-  auto* parray = dynamic_cast<MappedDataArrayInterface*>(
-      data_[tid]->GetPoints()->GetData());
-  parray->Update(agents, start, end);
-  auto* point_data = data_[tid]->GetPointData();
-  for (int i = 0; i < point_data->GetNumberOfArrays(); i++) {
-    auto* array =
-        dynamic_cast<MappedDataArrayInterface*>(point_data->GetArray(i));
-    array->Update(agents, start, end);
-  }
-}
-
-// -----------------------------------------------------------------------------
-TClass* VtkAgents::FindTClass() {
-  const auto& tclass_vector = FindClassSlow(name_);
-  if (tclass_vector.size() == 0) {
-    Log::Fatal("VtkAgents::VtkAgents",
-               Concat("Could not find class: ", name_).c_str());
-  } else if (tclass_vector.size() == 0) {
-    std::stringstream str;
-    for (auto& tc : tclass_vector) {
-      str << tc->GetName() << std::endl;
-    }
-    Log::Fatal("VtkAgents::VtkAgents",
-               Concat("Found multiple classes with name : ", name_,
-                      ". See list below. Fix this issue by adding a namespace "
-                      "modifier.\n'",
-                      str.str())
-                   .c_str());
-  }
-  return tclass_vector[0];
-}
-
-// -----------------------------------------------------------------------------
-void VtkAgents::InitializeDataMembers(
-    const Agent* agent, std::vector<std::string>* data_members) const {
-  std::set<std::string> dm_set = agent->GetRequiredVisDataMembers();
+void VtkAgents::InitializeMetadata(const Agent& agent) {
+  shape_ = agent.GetShape();
+  std::set<std::string> dm_set = agent.GetRequiredVisDataMembers();
   auto* param = Simulation::GetActive()->GetParam();
-  for (auto& dm : param->visualize_agents.at(name_)) {
-    dm_set.insert(dm);
+  auto configured = param->visualize_agents.find(name_);
+  if (configured != param->visualize_agents.end()) {
+    dm_set.insert(configured->second.begin(), configured->second.end());
   }
-  data_members->resize(dm_set.size());
-  std::copy(dm_set.begin(), dm_set.end(), data_members->begin());
+  data_members_.assign(dm_set.begin(), dm_set.end());
+  metadata_initialized_ = true;
+}
+
+// -----------------------------------------------------------------------------
+void VtkAgents::UpdateGrid(uint64_t tid, const std::vector<Agent*>* agents,
+                           uint64_t start, uint64_t end) {
+  auto* grid = data_[tid];
+  grid->Initialize();
+
+  vtkNew<vtkPoints> points;
+  points->SetNumberOfPoints(end - start);
+  for (uint64_t i = start; i < end; ++i) {
+    const auto& position = (*agents)[i]->GetPosition();
+    points->SetPoint(i - start, position[0], position[1], position[2]);
+  }
+  grid->SetPoints(points);
+
+  vtkNew<vtkCellArray> vertices;
+  vertices->AllocateExact(end - start, end - start);
+  for (vtkIdType i = 0; i < static_cast<vtkIdType>(end - start); ++i) {
+    vertices->InsertNextCell(1, &i);
+  }
+  grid->SetCells(VTK_VERTEX, vertices);
+
+  for (const auto& name : data_members_) {
+    if (name == "position_") {
+      continue;
+    }
+
+    if (start == end) {
+      continue;
+    }
+    VisualizationData first_value;
+    if (!(*agents)[start]->GetVisualizationData(name, &first_value)) {
+      Log::Fatal("VtkAgents::UpdateGrid", "Agent type '", name_,
+                 "' does not expose visualization data member '", name, "'.");
+    }
+
+    std::visit(
+        [&](const auto& initial_values) {
+          using Values = std::decay_t<decltype(initial_values)>;
+          using Value = typename Values::value_type;
+          if (initial_values.empty()) {
+            Log::Fatal("VtkAgents::UpdateGrid", "Agent type '", name_,
+                       "' exposes empty visualization data member '", name,
+                       "'.");
+          }
+
+          vtkNew<vtkAOSDataArrayTemplate<Value>> array;
+          array->SetName(name.c_str());
+          array->SetNumberOfComponents(static_cast<int>(initial_values.size()));
+          array->SetNumberOfTuples(end - start);
+
+          for (uint64_t i = start; i < end; ++i) {
+            VisualizationData current_value;
+            if (!(*agents)[i]->GetVisualizationData(name, &current_value)) {
+              Log::Fatal("VtkAgents::UpdateGrid", "Agent type '", name_,
+                         "' does not expose visualization data member '", name,
+                         "'.");
+            }
+            auto* current_values = std::get_if<Values>(&current_value);
+            if (current_values == nullptr ||
+                current_values->size() != initial_values.size()) {
+              Log::Fatal("VtkAgents::UpdateGrid", "Agent type '", name_,
+                         "' exposes inconsistent visualization data member '",
+                         name, "'.");
+            }
+            for (size_t component = 0; component < current_values->size();
+                 ++component) {
+              array->SetTypedComponent(static_cast<vtkIdType>(i - start),
+                                       static_cast<int>(component),
+                                       (*current_values)[component]);
+            }
+          }
+          grid->GetPointData()->AddArray(array);
+        },
+        first_value);
+  }
 }
 
 }  // namespace bdm

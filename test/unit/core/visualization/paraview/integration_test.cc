@@ -35,9 +35,8 @@ std::string GetPythonScriptPath(const std::string& python_script) {
 void Validate(const std::string& python_script, const std::string& sim_name,
               uint64_t num_elements, bool use_pvsm) {
   std::stringstream cmd;
-  std::string pv_dir = std::getenv("ParaView_DIR");
 
-  cmd << pv_dir << "/bin/pvbatch " << GetPythonScriptPath(python_script)
+  cmd << "pvbatch " << GetPythonScriptPath(python_script)
       << " --sim_name=" << sim_name << " --num_elements=" << num_elements;
   if (use_pvsm) {
     cmd << " --use_pvsm";
@@ -55,6 +54,8 @@ void Validate(const std::string& python_script, const std::string& sim_name,
 void RunDiffusionGridTest(uint64_t max_bound, uint64_t resolution,
                           bool export_visualization = true,
                           bool use_pvsm = true) {
+  constexpr real_t kDiffusionCoefficient = 1e-10;
+  constexpr real_t kDecayConstant = 1e-9;
   auto num_diffusion_boxes = std::pow(resolution, 3);
   auto set_param = [&](Param* param) {
     param->remove_output_dir_contents = true;
@@ -76,8 +77,8 @@ void RunDiffusionGridTest(uint64_t max_bound, uint64_t resolution,
   auto* sim = new Simulation(sim_name, set_param);
   auto output_dir = sim->GetOutputDir();
 
-  ModelInitializer::DefineSubstance(0, "Substance", 0.0000000001, 0.000000001,
-                                    resolution);
+  ModelInitializer::DefineSubstance(0, "Substance", kDiffusionCoefficient,
+                                    kDecayConstant, resolution);
   // create a sequence 1, 2, 3...
   // since initialization is multithreaded returning in increasing counter
   // does not work. -> calculate and return box id
@@ -161,8 +162,8 @@ TEST(FLAKY_ParaviewIntegrationTest, InsituDiffusionGrid_SlicesGtNumThreads) {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void RunAgentsTest(Param::MappedDataArrayMode mode, uint64_t num_agents,
-                   bool export_visualization = true, bool use_pvsm = true) {
+void RunAgentsTest(uint64_t num_agents, bool export_visualization = true,
+                   bool use_pvsm = true) {
   auto set_param = [&](Param* param) {
     param->remove_output_dir_contents = true;
     param->export_visualization = export_visualization;
@@ -177,10 +178,9 @@ void RunAgentsTest(Param::MappedDataArrayMode mode, uint64_t num_agents,
     param->unschedule_default_operations = {"mechanical forces"};
     param->visualize_agents.insert(
         {"NeuriteElement", {"uid_", "daughter_right_"}});
-    param->mapped_data_array_mode = mode;
   };
   neuroscience::InitModule();
-  auto sim_name = Concat("ExportAgentsTest_", num_agents, "_", mode);
+  auto sim_name = Concat("ExportAgentsTest_", num_agents);
   auto* sim = new Simulation(sim_name, set_param);
 
   auto output_dir = sim->GetOutputDir();
@@ -225,55 +225,25 @@ void RunAgentsTest(Param::MappedDataArrayMode mode, uint64_t num_agents,
 }
 
 // -----------------------------------------------------------------------------
-TEST(FLAKY_ParaviewIntegrationTest, ExportAgents_ZeroCopy) {
+TEST(FLAKY_ParaviewIntegrationTest, ExportAgents) {
   auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kZeroCopy;
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, std::max(1, max_threads - 1)));
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, 10 * max_threads + 1));
-}
-
-// -----------------------------------------------------------------------------
-TEST(FLAKY_ParaviewIntegrationTest, ExportAgents_Cache) {
-  auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kCache;
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, std::max(1, max_threads - 1)));
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, 10 * max_threads + 1));
-}
-
-// -----------------------------------------------------------------------------
-TEST(FLAKY_ParaviewIntegrationTest, ExportAgents_Copy) {
-  auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kCopy;
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, std::max(1, max_threads - 1)));
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, 10 * max_threads + 1));
+  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(std::max(1, max_threads - 1)));
+  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(10 * max_threads + 1));
 }
 
 // -----------------------------------------------------------------------------
 TEST(FLAKY_ParaviewIntegrationTest, ExportAgentsLoadWithoutPVSM) {
   auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kZeroCopy;
   LAUNCH_IN_NEW_PROCESS(
-      RunAgentsTest(mode, std::max(1, max_threads - 1), true, false));
+      RunAgentsTest(std::max(1, max_threads - 1), true, false));
 }
 
-// Disable insitu tests until ROOT cling crash on MacOS has been resolved
 #ifndef __APPLE__
 // -----------------------------------------------------------------------------
-TEST(FLAKY_ParaviewIntegrationTest, InsituAgents_ZeroCopy) {
+TEST(FLAKY_ParaviewIntegrationTest, InsituAgents) {
   auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kZeroCopy;
-  LAUNCH_IN_NEW_PROCESS(
-      RunAgentsTest(mode, std::max(1, max_threads - 1), false));
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, 10 * max_threads + 1, false));
-}
-
-// -----------------------------------------------------------------------------
-TEST(FLAKY_ParaviewIntegrationTest, InsituAgents_Cache) {
-  auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kCache;
-  LAUNCH_IN_NEW_PROCESS(
-      RunAgentsTest(mode, std::max(1, max_threads - 1), false));
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, 10 * max_threads + 1, false));
+  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(std::max(1, max_threads - 1), false));
+  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(10 * max_threads + 1, false));
 }
 
 // -----------------------------------------------------------------------------
@@ -299,14 +269,6 @@ TEST(FLAKY_ParaviewIntegrationTest, DefaultInsituPipeline) {
   LAUNCH_IN_NEW_PROCESS(RunDefaultInsituPipelineTest());
 }
 
-// -----------------------------------------------------------------------------
-TEST(FLAKY_ParaviewIntegrationTest, InsituAgents_Copy) {
-  auto max_threads = ThreadInfo::GetInstance()->GetMaxThreads();
-  auto mode = Param::MappedDataArrayMode::kCopy;
-  LAUNCH_IN_NEW_PROCESS(
-      RunAgentsTest(mode, std::max(1, max_threads - 1), false));
-  LAUNCH_IN_NEW_PROCESS(RunAgentsTest(mode, 10 * max_threads + 1, false));
-}
 #endif  // __APPLE__
 
 }  // namespace bdm
