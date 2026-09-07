@@ -114,9 +114,9 @@ struct GaussianBand {
 
   real_t operator()(real_t x, real_t y, real_t z) {
     switch(axis_) {
-      case Axis::kXAxis: return ROOT::Math::normal_pdf(x, sigma_, mean_);
-      case Axis::kYAxis: return ROOT::Math::normal_pdf(y, sigma_, mean_);
-      case Axis::kZAxis: return ROOT::Math::normal_pdf(z, sigma_, mean_);
+      case Axis::kXAxis: return Math::NormalPdf(x, sigma_, mean_);
+      case Axis::kYAxis: return Math::NormalPdf(y, sigma_, mean_);
+      case Axis::kZAxis: return Math::NormalPdf(z, sigma_, mean_);
       default: throw std::logic_error("You have chosen an non-existing axis!");
     }
   }
@@ -140,7 +140,7 @@ the following lambda:
 
 ```cpp
 auto gaussian_band = [](real_t x, real_t y, real_t z) {
-  return ROOT::Math::normal_pdf(x, 5, 0);
+  return Math::NormalPdf(x, 5, 0);
 };
 ```
 
