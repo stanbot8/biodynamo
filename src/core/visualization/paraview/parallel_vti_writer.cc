@@ -70,11 +70,10 @@ void PvtiWriter::Write(const std::string& folder,
   std::ofstream ofs(filename);
   // header
   ofs << "<?xml version=\"1.0\"?>\n"
-      << "<VTKFile type=\"PImageData\" "
-      << "version=\"" << version_str << "\" "
-      << "byte_order=\"" << endianess_str << "\" "
-      << "header_type=\"" << header_type_str << "\" "
-      << "compressor=\"" << compressor_str << "\">\n";
+      << "<VTKFile type=\"PImageData\" " << "version=\"" << version_str << "\" "
+      << "byte_order=\"" << endianess_str << "\" " << "header_type=\""
+      << header_type_str << "\" " << "compressor=\"" << compressor_str
+      << "\">\n";
   ofs << "<PImageData WholeExtent=\"" << ArrayToString(whole_extent.data(), 6)
       << "\" GhostLevel=\"0\" Origin=\"" << ArrayToString(origin, 3)
       << "\" Spacing=\"" << ArrayToString(spacing, 3) << "\">\n";
@@ -111,7 +110,6 @@ void ParallelVtiWriter::operator()(
     const std::vector<std::array<int, 6>>& piece_extents) const {
   auto* param = Simulation::GetActive()->GetParam();
 
-#pragma omp parallel for schedule(static, 1)
   for (uint64_t i = 0; i < num_pieces; ++i) {
     auto vti_filename = Concat(folder, "/", file_prefix, "_", i, ".vti");
     vtkNew<VtiWriter> vti;

@@ -21,7 +21,7 @@ namespace bdm {
 namespace paraview_adaptor_test_internal {
 
 class MyCell : public Cell {
-  BDM_AGENT_HEADER(MyCell, Cell, 1);
+  BDM_AGENT_HEADER(MyCell, Cell);
 
  public:
   MyCell() = default;
@@ -30,7 +30,7 @@ class MyCell : public Cell {
 };
 
 class MyNeuron : public Cell {
-  BDM_AGENT_HEADER(MyNeuron, Cell, 1);
+  BDM_AGENT_HEADER(MyNeuron, Cell);
 
  public:
   MyNeuron() = default;

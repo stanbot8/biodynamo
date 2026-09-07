@@ -12,27 +12,30 @@
 #
 # -----------------------------------------------------------------------------
 
-import os, sys, shutil
+import os
 import subprocess as sp
+import sys
+
 from print_command import Print
-from build_command import BuildCommand
 
 
 ## The BioDynaMo CLI command to execute the unit-tests created by default with
 ## the simulation template. Note that we ignore the configuration in bdm.json.
 def ViewCommand(file_id=None):
     Print.success("<bdm view> Opening previous simulation results ...")
-    # 1. Check if paraview is installed and if not, return
-    bdmsys = os.environ.get("BDMSYS")
-    if bdmsys is None:
-        Print.error("<bdm view> BDMSYS is not set.")
-        sys.exit(1)
-    paraview_executable = os.path.join(
-        bdmsys, "third_party/paraview/bin/paraview"
-    )
-    pv_found = sp.run("{} --version".format(paraview_executable), shell=True)
-    if pv_found.returncode != 0:
+    # 1. Check if ParaView is available on PATH.
+    try:
+        pv_found = sp.run(
+            ["paraview", "--version"],
+            stdout=sp.DEVNULL,
+            stderr=sp.DEVNULL,
+            check=False,
+        )
+    except FileNotFoundError:
         Print.error("<bdm view> ParaView not found.")
+        sys.exit(1)
+    if pv_found.returncode != 0:
+        Print.error("<bdm view> ParaView could not be started.")
         sys.exit(1)
 
     # 2. attempt to change into project director if we are in build
@@ -83,9 +86,7 @@ def ViewCommand(file_id=None):
         os.chdir("build")
 
     # 9. Open the latest pvsm file
-    visualize = sp.run(
-        "{} --state={}".format(paraview_executable, pvsm_file), shell=True
-    )
+    visualize = sp.run(["paraview", "--state={}".format(pvsm_file)])
     if visualize.returncode != 0:
         Print.warning(
             "<bdm view> Visualization terminated with return code {}.".format(
