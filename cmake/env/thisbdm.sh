@@ -249,55 +249,7 @@ _source_thisbdm()
     export LDFLAGS="-L$BREWPREFIX/opt/libomp/lib $LDFLAGS"
   fi
 
-  # paraview versions might be different between OSes
-  local bdm_pv_version='5.9'
-  if [ "$(uname)" = 'Darwin' ]; then
-    bdm_pv_version='5.10'
-  fi
-
-  # Clear the env from previously set ParaView and Qt paths.
   local with_paraview=@with_paraview@
-  if [ "$with_paraview" = 'ON' ]; then
-    if [ -n "${old_bdmsys}" ]; then
-      if [ -n "${ParaView_DIR}" ]; then
-        _drop_bdm_from_path "$ParaView_DIR" "${old_bdmsys}/third_party/paraview/lib/cmake/paraview-$bdm_pv_version"
-        ParaView_DIR=$_newpath
-      fi
-      if [ -n "${ParaView_LIB_DIR}" ]; then
-        _drop_bdm_from_path "$ParaView_LIB_DIR" "${old_bdmsys}/third_party/paraview/lib"
-        ParaView_LIB_DIR=$_newpath
-      fi
-      if [ -n "${PV_PLUGIN_PATH}" ]; then
-        _drop_bdm_from_path "$PV_PLUGIN_PATH" "${old_bdmsys}/lib/pv_plugin"
-        PV_PLUGIN_PATH=$_newpath
-      fi
-      if [ -n "${PATH}" ]; then
-        _drop_bdm_from_path "$PATH" "${old_bdmsys}/third_party/paraview/bin"
-        PATH=$_newpath
-      fi
-      if [ -n "${Qt5_DIR}" ]; then
-        _drop_bdm_from_path "$Qt5_DIR" "${old_bdmsys}/third_party/qt/lib/cmake/Qt5"
-        Qt5_DIR=$_newpath
-      fi
-      if [ -n "${QT_QPA_PLATFORM_PLUGIN_PATH}" ]; then
-        _drop_bdm_from_path "$QT_QPA_PLATFORM_PLUGIN_PATH" "${old_bdmsys}/third_party/qt/plugins"
-        QT_QPA_PLATFORM_PLUGIN_PATH=$_newpath
-      fi
-      if [ -n "${DYLD_LIBRARY_PATH}" ]; then
-        _drop_bdm_from_path "$DYLD_LIBRARY_PATH" "${old_bdmsys}/third_party/paraview/lib"
-        DYLD_LIBRARY_PATH=$_newpath
-        _drop_bdm_from_path "$DYLD_LIBRARY_PATH" "${old_bdmsys}/third_party/qt/lib"
-        DYLD_LIBRARY_PATH=$_newpath
-      fi
-      if [ -n "${LD_LIBRARY_PATH}" ]; then
-        _drop_bdm_from_path "$LD_LIBRARY_PATH" "${old_bdmsys}/third_party/paraview/lib"
-        LD_LIBRARY_PATH=$_newpath
-        _drop_bdm_from_path "$LD_LIBRARY_PATH" "${old_bdmsys}/third_party/qt/lib"
-        LD_LIBRARY_PATH=$_newpath
-      fi
-    fi
-  fi
-  #########
 
   if [ -z "${MANPATH}" ]; then
      local default_manpath
@@ -386,156 +338,14 @@ _source_thisbdm()
   export CMAKE_PREFIX_PATH
   ########
 
-  #### ROOT Specific Configurations ####
-  if [ -z "$BDM_CUSTOM_ROOT" ]; then
-    if [ -z "${ROOTSYS}" ]; then
-      export BDM_CUSTOM_ROOT=false
-    else
-      export BDM_CUSTOM_ROOT=true
-    fi
-  fi
-
-  if [[ ( -z "${BDM_ROOT_DIR}" && -z "${ROOTSYS}" ) || "$BDM_CUSTOM_ROOT" = false ]]; then
-    BDM_ROOT_DIR=${BDMSYS}/third_party/root
-    export BDM_CUSTOM_ROOT=false
-  fi
-
-  if [ "$BDM_CUSTOM_ROOT" = true ] && [ -n "${ROOTSYS}" ]; then
-    _bdm_info "[INFO] Custom ROOT 'ROOTSYS=${ROOTSYS}'"
-    local orvers="@rootvers@"
-    local crvers
-    crvers=$("$ROOTSYS"/bin/root-config --version || echo '')
-    if [ "$crvers" = "$orvers" ]; then
-      BDM_ROOT_DIR=${ROOTSYS}
-    else
-      _bdm_warn "[WARN] ROOTSYS points to ROOT version '$crvers',"
-      _bdm_warn "       while BDM was built with version '$orvers'."
-      _bdm_warn "       You may encounter errors as compatibility is not guaranteed."
-      # no longer fatal as user probably wants to override this for a reason.
-    fi
-  fi
-
-  if ! [ -d "$BDM_ROOT_DIR" ]; then
-    _bdm_err "[ERR] We are unable to source ROOT! Please make sure ROOT is installed"
-    _bdm_err "      on your system! You can manually specify its location by executing"
-    _bdm_err "      'export BDM_ROOT_DIR=path/to/root', before running cmake."
-    return 1
-  fi
-
-  export BDM_ROOT_DIR
-  # shellcheck disable=SC1090
-  . "${BDM_ROOT_DIR}"/bin/thisroot.sh || return 1
-  _bdm_define_command root || return 1
-  ########
-
   #### ParaView Specific Configurations ####
   if [ "$with_paraview" = 'ON' ]; then
-     if [ -z "$BDM_CUSTOM_PV" ]; then
-       if [ -z "${ParaView_DIR}" ]; then
-         export BDM_CUSTOM_PV=false
-       else
-         export BDM_CUSTOM_PV=true
-       fi
-     fi
-
-     if [ "$BDM_CUSTOM_PV" = false ] || [ -z "${ParaView_DIR}" ]; then
-       ParaView_DIR=${BDMSYS}/third_party/paraview; export ParaView_DIR
-     else
-       _bdm_info "[INFO] Custom ParaView 'ParaView_DIR=${ParaView_DIR}'"
-     fi
-
-     if ! [ -d "$ParaView_DIR" ]; then
-       _bdm_err "[ERR] We are unable to find ParaView! Please make sure it is installed"
-       _bdm_err "      on your system! You can manually specify its location by executing"
-       _bdm_err "      'export ParaView_DIR=path/to/paraview' together with"
-       _bdm_err "      'export Qt5_DIR=path/to/qt', before running cmake."
-       return 1
-     fi
-
-     if [ -z "${ParaView_LIB_DIR}" ]; then
-       ParaView_LIB_DIR="${ParaView_DIR}/lib"
-     else
-       ParaView_LIB_DIR="${ParaView_DIR}/lib":$ParaView_LIB_DIR
-     fi
-     export ParaView_LIB_DIR
-
      if [ -z "${PV_PLUGIN_PATH}" ]; then
       PV_PLUGIN_PATH="${BDMSYS}/lib/pv_plugin"
      else
       PV_PLUGIN_PATH="${BDMSYS}/lib/pv_plugin":$PV_PLUGIN_PATH
      fi
      export PV_PLUGIN_PATH
-
-     # We don't add the ParaView site-packages path to PYTHONPATH, because pip in the
-     # pyenv environment will not function anymore: ModuleNotFoundError: No module named 'pip._internal'
-     _bdm_define_command paraview || return 1
-     _bdm_define_command pvpython || return 1
-     _bdm_define_command pvbatch || return 1
-
-     if [ -z "${LD_LIBRARY_PATH}" ]; then
-       LD_LIBRARY_PATH="${ParaView_LIB_DIR}"
-     else
-       LD_LIBRARY_PATH="${ParaView_LIB_DIR}":$LD_LIBRARY_PATH
-     fi
-     export LD_LIBRARY_PATH
-
-     if [ -z "${DYLD_LIBRARY_PATH}" ]; then
-       DYLD_LIBRARY_PATH="${ParaView_LIB_DIR}"
-     else
-       DYLD_LIBRARY_PATH="${ParaView_LIB_DIR}":$DYLD_LIBRARY_PATH
-     fi
-     export DYLD_LIBRARY_PATH
-     ########
-
-     #### Qt5 Specific Configurations ####
-     if [ -z "$BDM_CUSTOM_QT" ]; then
-       if [ -z "${Qt5_DIR}" ]; then
-         export BDM_CUSTOM_QT=false
-       else
-         export BDM_CUSTOM_QT=true
-       fi
-     fi
-
-     if [ "$BDM_CUSTOM_QT" = false ] || [ -z "${Qt5_DIR}" ]; then
-       # On Apple devices we use the brew install of Qt5
-       if [ "$(uname)" = 'Darwin' ];then
-          Qt5_DIR=$(brew --prefix)/opt/qt@5
-       else
-          Qt5_DIR=${BDMSYS}/third_party/qt
-       fi
-       export Qt5_DIR
-     else
-       _bdm_info "[INFO] Custom Qt5 'Qt5_DIR=${QT5_DIR}'"
-     fi
-
-     if ! [ -d "$Qt5_DIR" ]; then
-       _bdm_err "[ERR] We are unable to find Qt5! Please make sure it is installed"
-       _bdm_err "      on your system! You can manually specify its location by executing"
-       _bdm_err "      'export Qt5_DIR=path/to/qt' together with"
-       _bdm_err "      'export ParaView_DIR=path/to/paraview', before running cmake."
-       return 1
-     fi
-
-     if [ -z "${QT_QPA_PLATFORM_PLUGIN_PATH}" ]; then
-       QT_QPA_PLATFORM_PLUGIN_PATH="${Qt5_DIR}/plugins"
-     else
-       QT_QPA_PLATFORM_PLUGIN_PATH="${Qt5_DIR}/plugins":$QT_QPA_PLATFORM_PLUGIN_PATH
-     fi
-     export QT_QPA_PLATFORM_PLUGIN_PATH
-
-     if [ -z "${LD_LIBRARY_PATH}" ]; then
-       LD_LIBRARY_PATH="${Qt5_DIR}/lib"
-     else
-       LD_LIBRARY_PATH="${Qt5_DIR}/lib":$LD_LIBRARY_PATH
-     fi
-     export LD_LIBRARY_PATH
-
-     if [ -z "${DYLD_LIBRARY_PATH}" ]; then
-       DYLD_LIBRARY_PATH="${Qt5_DIR}/lib"
-     else
-       DYLD_LIBRARY_PATH="${Qt5_DIR}/lib":$DYLD_LIBRARY_PATH
-     fi
-     export DYLD_LIBRARY_PATH
   fi
   #######
 
@@ -586,25 +396,6 @@ _source_thisbdm()
     autoload -Uz __bdm_zsh_completions || return 1
     # compinit || return 1 # FIXME zsh completion broken
 
-    ### Enable commands in child shells (like in bash) ###
-    local ld_root='if [ -d "${BDM_ROOT_DIR}" ]; then autoload -Uz root; fi;'
-    local ld_pv='if [ -d "${ParaView_DIR}" ]; then autoload -Uz paraview pvpython pvbatch; fi;'
-    local marker=' # >>thisbdm<<'
-    local zshenv_line='if [ -d "${BDMSYS}" ]; then; '"${ld_root} ""${ld_pv}"' ; fi;'"${marker}"
-    local zsh_config_dir="$HOME"
-    if [ -n "$ZDOTDIR" ]; then
-      zsh_config_dir="$ZDOTDIR"
-    fi
-
-    local zshenv_file="${zsh_config_dir}/.zshenv"
-    if ! [ -f "$zshenv_file" ]; then
-      _bdm_info "[INFO] creating .zshenv file '$zshenv_file'"
-      touch "$zshenv_file"
-    fi
-
-    # ensure the above is only called once in .zshrc
-    sed -i.bak '/^.*'"$marker"'$/,$d' "$zshenv_file" && rm "${zshenv_file}.bak" || return 1
-    echo "$zshenv_line" >> "$zshenv_file"
   fi
 
   ### Environment Indicator ###

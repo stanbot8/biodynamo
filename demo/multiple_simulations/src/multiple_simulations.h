@@ -22,7 +22,7 @@ namespace bdm {
 
 // Behavior that divides the agent at each time step
 struct Divide : Behavior {
-  BDM_BEHAVIOR_HEADER(Divide, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(Divide, Behavior);
 
   Divide() {}
 

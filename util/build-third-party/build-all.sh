@@ -16,7 +16,7 @@
 if [[ $# -ne 0 ]]; then
   echo "ERROR: Wrong number of arguments.
 Description:
-  This script builds all third party dependencies.
+  This script builds the bundled third party dependency.
   The archives will be stored in BDM_PROJECT_DIR/build
 No Arguments"
   exit 1
@@ -27,17 +27,10 @@ set -e -x
 SCRIPTPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Install the prerequisites
-. ${SCRIPTPATH}/util/build-third-party/third-party-prerequisites.sh
+. "${SCRIPTPATH}/third-party-prerequisites.sh"
 
 # Software versions
-ROOT_VERSION=6.26.10
 ROADRUNNER_VERSION=release
 
-# root
-$SCRIPTPATH/build-root.sh $ROOT_VERSION
-
-# paraview and qt
-$SCRIPTPATH/build-paraview.sh
-
 # roadrunner
-$SCRIPTPATH/build-roadrunner.sh $ROADRUNNER_VERSION
+"$SCRIPTPATH/build-roadrunner.sh" "$ROADRUNNER_VERSION"

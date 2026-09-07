@@ -166,29 +166,7 @@ function source_thisbdm
         set -gx LDFLAGS "-L$BREWPREFIX/opt/libomp/lib $LDFLAGS"
     end
 
-    # paraview versions might be different between OSes
-    set -l bdm_pv_version '5.9'
-    if test (uname) = 'Darwin'
-        set -l bdm_pv_version '5.9'
-    end
-
-    # Clear the env from previously set ParaView and Qt paths.
     set -l with_paraview @with_paraview@
-    if test "$with_paraview" = 'ON'
-        if test -n "$old_bdmsys"
-            _drop_from_var ParaView_DIR "$old_bdmsys/third_party/paraview/lib/cmake/paraview-$bdm_pv_version"
-            _drop_from_var ParaView_LIB_DIR "$old_bdmsys/third_party/paraview/lib"
-            _drop_from_var PV_PLUGIN_PATH "$old_bdmsys/lib/pv_plugin"
-            _drop_from_var PATH "$old_bdmsys/third_party/paraview/bin"
-            _drop_from_var Qt5_DIR "$old_bdmsys/third_party/qt/lib/cmake/Qt5"
-            _drop_from_var QT_QPA_PLATFORM_PLUGIN_PATH "$old_bdmsys/third_party/qt/plugins"
-            _drop_from_var DYLD_LIBRARY_PATH "$old_bdmsys/third_party/paraview/lib"
-            _drop_from_var DYLD_LIBRARY_PATH "$old_bdmsys/third_party/qt/lib"
-            _drop_from_var LD_LIBRARY_PATH "$old_bdmsys/third_party/paraview/lib"
-            _drop_from_var LD_LIBRARY_PATH "$old_bdmsys/third_party/qt/lib"
-        end
-    end
-    #########
 
     set -l default_manpath
     if test -z "$MANPATH"
@@ -269,145 +247,12 @@ function source_thisbdm
     end
     ########
 
-    #### ROOT Specific Configurations ####    
-    if test -z "$BDM_CUSTOM_ROOT"
-        if test -z "$ROOTSYS"
-            set -gx BDM_CUSTOM_ROOT false
-        else
-            set -gx BDM_CUSTOM_ROOT true
-        end
-    end
-
-    if  begin; 
-            test -z "$BDM_ROOT_DIR"; and test -z "$ROOTSYS";
-        end; or test "$BDM_CUSTOM_ROOT" = false
-        set -gx BDM_ROOT_DIR "$BDMSYS/third_party/root"
-        set -gx BDM_CUSTOM_ROOT false
-    end
-
-    if test "$BDM_CUSTOM_ROOT" = true; and test -n "$ROOTSYS"
-        _bdm_info "[INFO] Custom ROOT 'ROOTSYS=$ROOTSYS'"
-        set orvers "@rootvers@"
-        set crvers ("$ROOTSYS"/bin/root-config --version; or echo '')
-        if test "$crvers" = "$orvers"
-            set -gx BDM_ROOT_DIR "$ROOTSYS"
-        else
-            _bdm_warn "[WARN] ROOTSYS points to ROOT version '$crvers',"
-            _bdm_warn "       while BDM was built with version '$orvers'."
-            _bdm_warn "       You may encounter errors as compatibility is not guaranteed."
-            # no longer fatal as user probably wants to override this for a reason.
-        end
-    end
-
-    if not test -d "$BDM_ROOT_DIR"
-        _bdm_err "[ERR] We are unable to source ROOT! Please make sure ROOT is installed"
-        _bdm_err "      on your system! You can manually specify its location by executing"
-        _bdm_err "      'export BDM_ROOT_DIR=path/to/root', before running cmake."
-        return 1
-    end
-
-    function __bdm_root
-        "$BDM_ROOT_DIR"/bin/root -l -e 'cout << "Loading BioDynaMo into ROOT..." << endl; gROOT->LoadMacro("'"$BDMSYS"'/etc/rootlogon.C");' $argv
-    end
-    funcsave __bdm_root
-    . "$BDM_ROOT_DIR/bin/thisroot.fish"
-    ########
-
     #### ParaView Specific Configurations ####
     if test "$with_paraview" = 'ON'
-        if test -z "$BDM_CUSTOM_PV"
-            if test -z "$ParaView_DIR"
-                set -gx BDM_CUSTOM_PV false
-            else
-                set -gx BDM_CUSTOM_PV true
-            end
-        end
-    
-        if test "$BDM_CUSTOM_PV" = false; or test -z "$ParaView_DIR"
-            set -gx ParaView_DIR "$BDMSYS/third_party/paraview"
-        else
-            _bdm_info "[INFO] Custom ParaView 'ParaView_DIR=$ParaView_DIR'"
-        end
-     
-        if not test -d "$ParaView_DIR"
-            _bdm_err "[ERR] We are unable to find ParaView! Please make sure it is installed"
-            _bdm_err "      on your system! You can manually specify its location by executing"
-            _bdm_err "      'export ParaView_DIR=path/to/paraview' together with"
-            _bdm_err "      'export Qt5_DIR=path/to/qt', before running cmake."
-            return 1
-        end
-
-        if test -z "$ParaView_LIB_DIR"
-            set -gx ParaView_LIB_DIR "$ParaView_DIR/lib"
-        else
-            set -pgx ParaView_LIB_DIR "$ParaView_DIR/lib"
-        end
-
         if test -z "$PV_PLUGIN_PATH"
             set -gx PV_PLUGIN_PATH "$BDMSYS/lib/pv_plugin"
         else
             set -pgx PV_PLUGIN_PATH "$BDMSYS/lib/pv_plugin"
-        end
-
-        # We don't add the ParaView site-packages path to PYTHONPATH, because pip in the
-        # pyenv environment will not function anymore: ModuleNotFoundError: No module named 'pip._internal'
-        alias __bdm_paraview='$ParaView_DIR/bin/paraview'; funcsave __bdm_paraview
-        # aliases are just wrapped functions in fish, so they have the desired behavior
-        alias __bdm_pvpython='$ParaView_DIR/bin/pvpython'; funcsave __bdm_pvpython
-        alias __bdm_pvbatch='$ParaView_DIR/bin/pvbatch'; funcsave __bdm_pvbatch
-
-        if test -z "$LD_LIBRARY_PATH"
-            set -gx LD_LIBRARY_PATH "$ParaView_LIB_DIR"
-        else
-            set -pgx LD_LIBRARY_PATH "$ParaView_LIB_DIR"
-        end
-
-        if test -z "$DYLD_LIBRARY_PATH"
-            set -gx DYLD_LIBRARY_PATH "$ParaView_LIB_DIR"
-        else
-            set -pgx DYLD_LIBRARY_PATH "$ParaView_LIB_DIR"
-        end
-        ########
-
-        #### Qt5 Specific Configurations ####
-        if test -z "$BDM_CUSTOM_QT"
-            if test -z "$Qt5_DIR"
-                set -gx BDM_CUSTOM_QT false
-            else
-                set -gx BDM_CUSTOM_QT true
-            end
-        end
-        
-        if test "$BDM_CUSTOM_QT" = false; or test -z "$Qt5_DIR"
-            set -gx Qt5_DIR "$BDMSYS/third_party/qt"
-        else
-            _bdm_info "[INFO] Custom Qt5 'Qt5_DIR=$QT5_DIR'"
-        end
-
-        if not test -d "$Qt5_DIR"
-            _bdm_err "[ERR] We are unable to find Qt5! Please make sure it is installed"
-            _bdm_err "      on your system! You can manually specify its location by executing"
-            _bdm_err "      'export Qt5_DIR=path/to/qt' together with"
-            _bdm_err "      'export ParaView_DIR=path/to/paraview', before running cmake."
-            return 1
-        end
-
-        if test -z "$QT_QPA_PLATFORM_PLUGIN_PATH"
-            set -gx QT_QPA_PLATFORM_PLUGIN_PATH "$Qt5_DIR/plugins"
-        else
-            set -pgx QT_QPA_PLATFORM_PLUGIN_PATH "$Qt5_DIR/plugins"
-        end
-
-        if test -z "$LD_LIBRARY_PATH"
-            set -gx LD_LIBRARY_PATH "$Qt5_DIR/lib"
-        else
-            set -pgx LD_LIBRARY_PATH "$Qt5_DIR/lib"
-        end
-
-        if test -z "$DYLD_LIBRARY_PATH"
-            set -gx DYLD_LIBRARY_PATH "$Qt5_DIR/lib"
-        else
-            set -pgx DYLD_LIBRARY_PATH "$Qt5_DIR/lib"
         end
     end
     #######
@@ -439,29 +284,6 @@ function source_thisbdm
         end
     end
     #######
-
-    ### Enable commands in child shells (like in bash) ###
-    function __bdm_fish_functions
-        if test -d "$BDMSYS"
-            if test -d "$BDM_ROOT_DIR"
-                alias root='__bdm_root'
-            end
-            if test -d "$ParaView_DIR"
-                alias paraview='__bdm_paraview'
-                alias pvpython='__bdm_pvpython'
-                alias pvbatch='__bdm_pvbatch'
-            end
-        end
-    end
-    funcsave __bdm_fish_functions
-    set -l marker ' # >>thisbdm<<'
-    if test -e $__fish_config_dir/config.fish
-            # ensure the above is only called once in config.fish
-            sed -i.bak '/^.*'"$marker"'$/,$d' $__fish_config_dir/config.fish; and rm "$__fish_config_dir/config.fish.bak"; or return 1
-    end
-
-    echo "__bdm_fish_functions$marker" >> $__fish_config_dir/config.fish; or return 1
-    __bdm_fish_functions; or return 1
 
     ### Environment Indicator ###
     if not test "$BDM_THISBDM_NOPROMPT" = true

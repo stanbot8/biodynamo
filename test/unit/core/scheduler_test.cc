@@ -12,11 +12,16 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "unit/core/scheduler_test.h"
+#include "core/scheduler.h"
+
+#include <gtest/gtest.h>
+
+#include "core/agent/cell.h"
 #include "core/environment/uniform_grid_environment.h"
 #include "core/model_initializer.h"
 #include "core/operation/operation_registry.h"
 #include "unit/test_util/test_agent.h"
+#include "unit/test_util/test_util.h"
 
 namespace bdm {
 
@@ -50,7 +55,7 @@ class SchedulerTest : public ::testing::Test {
 
   void TearDown() override {}
 
-  void Initialize() { scheduler_->restore_point_++; }
+  void Initialize() { scheduler_->Initialize(); }
 
   ParallelResizeVector<UniformGridEnvironment::Box>* GetBoxes() {
     return &(env_->boxes_);
@@ -62,38 +67,6 @@ class SchedulerTest : public ::testing::Test {
   Scheduler* scheduler_ = nullptr;
   UniformGridEnvironment* env_ = nullptr;
 };
-
-#ifdef USE_DICT
-TEST_F(SchedulerTest, NoRestoreFile) {
-  auto set_param = [](auto* param) { param->restore_file = ""; };
-  Simulation simulation(TEST_NAME, set_param);
-  auto* rm = simulation.GetResourceManager();
-
-  remove(ROOTFILE);
-
-  Cell* cell = new Cell();
-  cell->SetDiameter(10);  // important for env to determine box size
-  rm->AddAgent(cell);
-
-  // start restore validation
-  TestSchedulerRestore scheduler;
-  scheduler.Simulate(100);
-  EXPECT_EQ(100u, scheduler.execute_calls);
-  EXPECT_EQ(1u, rm->GetNumAgents());
-
-  scheduler.Simulate(100);
-  EXPECT_EQ(200u, scheduler.execute_calls);
-  EXPECT_EQ(1u, rm->GetNumAgents());
-
-  scheduler.Simulate(100);
-  EXPECT_EQ(300u, scheduler.execute_calls);
-  EXPECT_EQ(1u, rm->GetNumAgents());
-}
-
-TEST_F(SchedulerTest, Restore) { RunRestoreTest(); }
-
-TEST_F(SchedulerTest, Backup) { RunBackupTest(); }
-#endif  // USE_DICT
 
 TEST_F(SchedulerTest, EmptySimulationFromBeginning) {
   auto set_param = [](auto* param) {

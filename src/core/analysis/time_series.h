@@ -19,7 +19,6 @@
 #include <vector>
 #include "core/analysis/reduce.h"
 #include "core/real_t.h"
-#include "core/util/root.h"
 
 namespace bdm {
 
@@ -50,8 +49,6 @@ class DataTransformer {
   virtual void TransformYErrorHigh(
       const std::vector<real_t>& old_y_error_high,
       std::vector<real_t>& new_y_error_high) const = 0;
-
-  BDM_CLASS_DEF(DataTransformer, 1);
 };
 
 /// This class implements a linear transformation of the data of a time series.
@@ -113,8 +110,6 @@ class LinearTransformer : public DataTransformer {
   real_t y_error_low_intercept_ = 0.0;
   real_t y_error_high_slope_ = 1.0;
   real_t y_error_high_intercept_ = 0.0;
-
-  BDM_CLASS_DEF_OVERRIDE(LinearTransformer, 1);
 };
 
 /// This class simplifies the collection of time series data during a
@@ -133,22 +128,13 @@ class TimeSeries {
     Data& operator=(const Data& other);
 
     Reducer<real_t>* y_reducer_collector = nullptr;
-    real_t (*ycollector)(Simulation*) = nullptr;  //!
-    real_t (*xcollector)(Simulation*) = nullptr;  //!
+    real_t (*ycollector)(Simulation*) = nullptr;
+    real_t (*xcollector)(Simulation*) = nullptr;
     std::vector<real_t> x_values;
     std::vector<real_t> y_values;
     std::vector<real_t> y_error_low;
     std::vector<real_t> y_error_high;
-    BDM_CLASS_DEF_NV(Data, 1);
   };
-
-  /// Restore a saved TimeSeries object.
-  /// Usage example:
-  /// \code
-  /// TimeSeries* ts_restored;
-  /// TimeSeries::Load("path/ts.root", &ts_restored);
-  /// \endcode
-  static void Load(const std::string& full_filepath, TimeSeries** restored);
 
   /// This function combines several time series into one.
   /// All time series in parameter `time_series` must have the same entries.
@@ -167,12 +153,7 @@ class TimeSeries {
   /// TimeSeries merged;
   /// TimeSeries::Merge(
   ///     &merged, tss,
-  ///     [](const std::vector<real_t>& all_y_values, real_t* y, real_t* el,
-  ///        real_t* eh) {
-  ///       *y = TMath::Median(all_y_values.size(), all_y_values.data());
-  ///       *el = *y - *TMath::LocMin(all_y_values.begin(), all_y_values.end());
-  ///       *eh = *TMath::LocMax(all_y_values.begin(), all_y_values.end()) - *y;
-  ///     });
+  ///     merger);
   /// \endcode
   /// After these operations, `merged` will contain one entry with id "entry-0"
   /// with the following arrays: \n
@@ -181,7 +162,6 @@ class TimeSeries {
   /// `y-error-low:  {1, 3}` \n
   /// `y-error-high: {2, 5}` \n
   /// Of course any other merger can be used too: e.g. mean + stddev
-  /// \see https://root.cern/doc/master/namespaceTMath.html
   static void Merge(
       TimeSeries* merged, const std::vector<TimeSeries>& time_series,
       const std::function<void(const std::vector<real_t>&, real_t*, real_t*,
@@ -241,7 +221,7 @@ class TimeSeries {
   /// Add new entry with data that is not collected during a simulation.
   /// This function can for example be used to add experimental data
   /// which can be later plotted together with the simulation results
-  /// using a `LineGraph`.
+  /// using an analysis tool.
   /// \code
   /// time_series.Add("experimental-data", {0, 1, 2}, {3, 4, 5});
   /// \endcode
@@ -287,42 +267,9 @@ class TimeSeries {
   /// Print all time series entry names to stdout
   void ListEntries() const;
 
-  /// Saves a root file to disk.
-  void Save(const std::string& full_filepath) const;
-
-  /// Saves a json representation to disk
-  void SaveJson(const std::string& full_filepath) const;
-
  private:
   std::unordered_map<std::string, Data> data_;
-
-  BDM_CLASS_DEF_NV(TimeSeries, 1);
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-// The custom streamer is needed because ROOT can't stream function pointers
-// by default.
-inline void TimeSeries::Data::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    R__b.ReadClassBuffer(TimeSeries::Data::Class(), this);
-    Long64_t l;
-    R__b.ReadLong64(l);
-    this->ycollector = reinterpret_cast<real_t (*)(Simulation*)>(l);
-    R__b.ReadLong64(l);
-    this->xcollector = reinterpret_cast<real_t (*)(Simulation*)>(l);
-  } else {
-    R__b.WriteClassBuffer(TimeSeries::Data::Class(), this);
-    Long64_t l = reinterpret_cast<Long64_t>(this->ycollector);
-    R__b.WriteLong64(l);
-    l = reinterpret_cast<Long64_t>(this->xcollector);
-    R__b.WriteLong64(l);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 }  // namespace experimental
 }  // namespace bdm

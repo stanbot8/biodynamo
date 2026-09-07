@@ -22,7 +22,6 @@
 #include "core/gpu/opencl_state.h"
 #include "core/memory/memory_manager.h"
 #include "core/util/random.h"
-#include "core/util/root.h"
 
 namespace bdm {
 
@@ -52,7 +51,6 @@ class Simulation {
   /// This function returns the currently active Simulation simulation.
   static Simulation* GetActive();
 
-  explicit Simulation(TRootIOCtor* p);
   /// Constructor that takes the arguments from `main` to parse command line
   /// arguments. The simulation name is extracted from the executable name.
   /// Creation of a new simulation automatically activates it.
@@ -66,8 +64,7 @@ class Simulation {
   /// available, or if a different simulation name should be chosen. \n
   /// Command line arguments are not parsed!\n
   /// Creation of a new simulation automatically activates it.
-  /// \param config_file Use a different config file than the default bdm.toml
-  ///        or bdm.json
+  /// \param config_file Use a different config file than the default bdm.toml.
   explicit Simulation(const std::string& simulation_name,
                       const std::vector<std::string>& config_files = {});
 
@@ -84,10 +81,6 @@ class Simulation {
              const std::vector<std::string>& config_files = {});
 
   ~Simulation();
-
-  /// Copies / moves values from a restored simulation into this object.
-  /// Thus, pointers to `rm_`, `param_`, ... are not invalidated.
-  void Restore(Simulation&& restored);
 
   /// Activates this simulation.
   void Activate();
@@ -153,34 +146,34 @@ class Simulation {
   std::vector<Random*> random_;
 
   /// Execution Context for each thread
-  std::vector<ExecutionContext*> exec_ctxt_;  //!
+  std::vector<ExecutionContext*> exec_ctxt_;
 
   ResourceManager* rm_ = nullptr;
   Param* param_ = nullptr;
-  AgentUidGenerator* agent_uid_generator_ = nullptr;  //!
+  AgentUidGenerator* agent_uid_generator_ = nullptr;
   std::string name_;
-  Environment* environment_ = nullptr;  //!
-  Scheduler* scheduler_ = nullptr;      //!
-  OpenCLState* ocl_state_ = nullptr;    //!
+  Environment* environment_ = nullptr;
+  Scheduler* scheduler_ = nullptr;
+  OpenCLState* ocl_state_ = nullptr;
   bool is_gpu_environment_initialized_ = false;
   /// This id is unique for each simulation within the same process
-  uint64_t id_ = 0;  //!
+  uint64_t id_ = 0;
   /// cached value where `id_` is appended to `name_` if `id_` is
   /// not zero.\n
   /// e.g. `name_ = "my-sim"` and `id_ = 0` -> "my-sim"\n
   /// e.g. `name_ = "my-sim"` and `id_ = 4` -> "my-sim4"
-  std::string unique_name_;  //!
+  std::string unique_name_;
   /// cached value where `unique_name_` is appended to `Param::output_dir`
-  std::string output_dir_;  //!
+  std::string output_dir_;
   /// Stores command line arguments if (argc,argv) or CommandLineOptions
   /// are passed to the constructor.\n
-  std::string command_line_parameter_str_;  //!
+  std::string command_line_parameter_str_;
   /// BioDynaMo memory manager. If nullptr, default allocator will be used.
-  MemoryManager* mem_mgr_ = nullptr;  //!
+  MemoryManager* mem_mgr_ = nullptr;
   /// Timestep when constructor was called
-  int64_t ctor_ts_ = 0;  //!
+  int64_t ctor_ts_ = 0;
   /// Timestep when destructor was called
-  int64_t dtor_ts_ = 0;  //!
+  int64_t dtor_ts_ = 0;
   /// Collects time series information during the simulation
   experimental::TimeSeries* time_series_ = nullptr;
 
@@ -210,8 +203,6 @@ class Simulation {
   friend ParaviewAdaptorTest;
   friend class DiffusionTest_CopyOldData_Test;
   friend std::ostream& operator<<(std::ostream& os, Simulation& sim);
-
-  BDM_CLASS_DEF_NV(Simulation, 1);
 };
 
 }  // namespace bdm

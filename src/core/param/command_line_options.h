@@ -15,18 +15,16 @@
 #ifndef CORE_PARAM_COMMAND_LINE_OPTIONS_H_
 #define CORE_PARAM_COMMAND_LINE_OPTIONS_H_
 
-/// Don't split at ',' if options are repeated
-/// This would split { "bdm::Param": "option1": 123, "option2": 123}}
-/// into two strings: "{ "bdm::Param": "option1": 123" and ""option2": 123}}"
 #define CXXOPTS_VECTOR_DELIMITER '\n'
-#include <TError.h>
 #include <cxxopts.h>
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "bdm_version.h"
 #include "core/simulation.h"
@@ -38,7 +36,7 @@ class CommandLineOptions {
  public:
   CommandLineOptions(int argc, const char** argv);
 
-  ~CommandLineOptions();
+  ~CommandLineOptions() = default;
 
   /// Add an extra command line option
   template <typename T>
@@ -92,7 +90,7 @@ class CommandLineOptions {
   // Flag to determine if new options were added
   bool first_parse_ = true;
   cxxopts::Options options_;
-  cxxopts::ParseResult* parser_ = nullptr;
+  std::unique_ptr<cxxopts::ParseResult> parser_;
 };
 
 }  // namespace bdm
