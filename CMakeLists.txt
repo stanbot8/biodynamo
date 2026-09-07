@@ -137,9 +137,7 @@ option(test      "Build all tests." ON) # Makes boolean 'test' available.
 option(benchmark "Build benchmark suite." OFF)
 option(cuda      "Enable CUDA code generation for GPU acceleration" OFF)
 option(opencl    "Enable OpenCL code generation for GPU acceleration" OFF)
-option(dict      "Build with ROOT dictionaries" ON)
-option(paraview  "Enable ParaView" ON)
-option(notebooks "Generate BioDynaMo notebooks" OFF)
+option(paraview  "Enable ParaView" OFF)
 option(numa      "Enable NUMA-awareness in BioDynaMo." ON)
 option(sbml      "Enable SBML" OFF)
 option(libgit2   "Enable automatic git documentation for simulations." OFF)
@@ -155,9 +153,6 @@ option(real_t    "Define data type for real numbers. Currently supported: float,
 option(boost     "Enable Boost-based behaviors (e.g. RegulatoryNetwork)." ON)
 
 if(APPLE)
-  # ParaView on Apple devices
-  set(CMAKE_BDM_PVVERSION "5.10")
-  
   # Ignore Fink (/sw) and MacPorts (/opt/local) packages, only consider Brew
   set(CMAKE_IGNORE_PATH)
   foreach(_prefix /sw /opt/local)
@@ -166,7 +161,6 @@ if(APPLE)
 endif()
 
 if(UNIX AND NOT APPLE)
-  set(CMAKE_BDM_PVVERSION "5.9")
   set(LINUX TRUE)
   add_definitions("-DLINUX")
 endif()
@@ -178,12 +172,6 @@ if(real_t)
   add_definitions("-DBDM_REALT=${real_t}")
   add_definitions("-DBDM_CL_REALT=cl_${real_t}")
   set(BDM_CONFIG_REALT "${real_t}")
-  if(notebooks AND real_t STREQUAL "float")
-    # This if statement turns of the notebooks when we run with real_t=float.
-    # Currently, the notebooks do not support BDM with float for unknown reasons.
-    message(WARNING "Notebooks are not supported with real_t=float. Disabling notebooks.")
-    set(notebooks OFF)
-  endif()
 else()
   message(STATUS "Using default real_t (double)")
   set(BDM_CONFIG_REALT "float")
@@ -220,40 +208,7 @@ if (jemalloc)
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ljemalloc -L ${JEMALLOC_LIBRARY_DIR}")
 endif()
 
-if (APPLE)
-   set(NOPYENV YES)
-endif()
-
-
-if(NOPYENV)
-   # On macOS
-   # need to give hint which binary to find, however ideally it should be taken from the range spec 
-   set(Python3_EXECUTABLE "${BREW_PREFIX}/bin/python3.9")
-   find_package(Python3 3.9.1...<3.10 COMPONENTS Interpreter Development)
-   set(pythonvers ${Python_VERSION})
-   if (NOT Python3_FOUND)
-      message(FATAL_ERROR "We did not find the Python 3.9 interpreter. "
-         "Please run ./prerequisites.sh (or \"brew install python@3.9\") "
-         "again before calling cmake. The Python 3.9 interpreter "
-         "is required in order to successfully use BioDynaMo.")      
-   endif()
-else()
-   # Check if Python 3.9.1 from PyEnv is installed
-   set(pythonvers "3.9.1")
-   find_package(Python ${pythonvers} EXACT COMPONENTS Interpreter Development)
-   if (NOT Python_FOUND)
-      message(FATAL_ERROR "We did not find the Python ${pythonvers} interpreter from PyEnv. "
-         "Make sure you executed \"pyenv shell ${pythonvers}\" before running cmake. "
-         "If that doesn't work, run ./prerequisites.sh again. The Python ${pythonvers} "
-         "interpreter is required in order to successfully use BioDynaMo."
-         "You may also try the following sequence of commands that has often resolved"
-         "the problem: \n"
-         "export PATH=\"$HOME/.pyenv/bin:$PATH\" \n"
-         "eval \"$(pyenv init --path)\" \n"
-         "eval \"$(pyenv init -)\" \n"
-         "pyenv shell ${pythonvers}")
-   endif()
-endif()
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 # Check if OpenMPI is present
 find_package(MPI COMPONENTS C CXX)
@@ -268,18 +223,6 @@ endif(MPI_FOUND)
 
 if(APPLE)
   set(numa OFF)
-endif()
-
-# Check if GLUT is present. If we do not have it, then we disable directly paraview.
-if(paraview)
-  find_package(GLUT)
-  if(NOT GLUT_FOUND)
-      PRINT_WARNING()
-      MESSAGE("GLUT libraries were not found. In order to use ParaView they need to be installed.
- Please run ./prerequisites.sh before calling cmake.")
-      PRINT_LINE()
-      SET(paraview OFF)
-  endif()
 endif()
 
 if(APPLE)
@@ -304,7 +247,6 @@ calling cmake.")
 endif()
 
 if (test)
-  # must be before include(${ROOT_USE_FILE}) otherwise test compile fails
   find_package(Threads)
 endif()
 
@@ -331,13 +273,6 @@ endif()
 # Check if we have git installed
 find_package(Git)
 
-# Find ROOT and check its installation
-find_package(ROOT COMPONENTS Geom Gui GenVector)
-verify_ROOT()
-
-if (dict)
-  add_definitions("-DUSE_DICT")
-endif()
 find_package(ClangTools)
 if ("$ENV{CMAKE_EXPORT_COMPILE_COMMANDS}" STREQUAL "1" OR CLANG_TIDY_FOUND)
   # Generate a Clang compile_commands.json "compilation database" file for use
@@ -357,88 +292,11 @@ if(numa)
 endif()
 
 if(paraview)
-    # If we specify a custom location for ParaView then we need to specify also a custom location for Qt.
-    if ((DEFINED ENV{ParaView_DIR} AND NOT DEFINED ENV{Qt5_DIR}) OR (NOT DEFINED ENV{ParaView_DIR} AND DEFINED ENV{Qt5_DIR}))
-        MESSAGE(FATAL_ERROR "\nFATAL ERROR \nYou need to specify both ParaView_DIR and Qt5_DIR in order to build "
-                "BioDynaMo. This is needed only if you want to use your own versions of ParaView and Qt.")
-    endif()
-
-    # If Qt5_DIR is not set by the user, we will set it to the default directory
-    # where it's downloaded to. This is done in case the user runs CMake again,
-    # after which the find_package(ParaView) might complain that it can't find
-    # a compatible Qt5 installation
-    if(NOT DEFINED Qt5_DIR OR NOT DEFINED ${Qt5_DIR})
-      if(APPLE)
-         set(Qt5_DIR ${BREW_PREFIX}/opt/qt@5/lib/cmake/Qt5) 
-         set(QT_CMAKE_DIR ${BREW_PREFIX}/opt/qt@5/lib/cmake/Qt5)
-         set(DYLD_LIBRARY_PATH ${DYLD_LIBRARY_PATH} ${BREW_PREFIX}/opt/qt@5/lib)
-      else()
-        set(Qt5_DIR ${CMAKE_THIRD_PARTY_DIR}/qt/lib/cmake/Qt5)
-      endif(APPLE)
-    endif()
-    # Check the first time if ParaView exists in the system.
-    find_package(ParaView ${CMAKE_BDM_PVVERSION} CONFIG COMPONENTS Catalyst PythonCatalyst VTKExtensionsIOCore
-                 PATHS ${CMAKE_THIRD_PARTY_DIR}/paraview ENV{ParaView_DIR})
-
-    if(ParaView_FOUND)
-        # Check if found ParaView is BDM installed (matchres > -1)
-        string(FIND ${ParaView_PREFIX_PATH} ${CMAKE_THIRD_PARTY_DIR} matchres)
-        if (${matchres} GREATER -1)
-            # check SHA256 of ParaView to see if it matches currently supported ParaView
-            if (IS_DIRECTORY ${CMAKE_THIRD_PARTY_DIR}/paraview)
-                if (EXISTS ${CMAKE_THIRD_PARTY_DIR}/paraview/tar-sha256)
-                    # check if SHA256 of installed ParaView is the same as the expected one
-                    file(READ ${CMAKE_THIRD_PARTY_DIR}/paraview/tar-sha256 TAR_SHA256)
-                    if(NOT "${TAR_SHA256}" STREQUAL "${${DETECTED_OS_VERS}-ParaView}")
-                        # BDM installed ParaView has wrong SHA256... deleting it
-                        message(WARNING "The found ParaView version is not compatible... deleting it...")
-                        file(REMOVE_RECURSE ${CMAKE_THIRD_PARTY_DIR}/paraview)
-                        file(REMOVE_RECURSE ${CMAKE_THIRD_PARTY_DIR}/qt)
-                        unset(ParaView_FOUND)
-                    endif()
-                else()
-                    # BDM installed ParaView exists but no SHA256 file... deleting it
-                    message(WARNING "The found ParaView version cannot be determined... deleting it...")
-                    file(REMOVE_RECURSE ${CMAKE_THIRD_PARTY_DIR}/paraview)
-                    file(REMOVE_RECURSE ${CMAKE_THIRD_PARTY_DIR}/qt)
-                    unset(ParaView_FOUND)
-                endif()
-            endif()
-        endif()
-    endif()
-
-    if(NOT ParaView_FOUND)
-
-      # If we did not found paraview then we will install it automatically with the Qt package.
-      if(APPLE)
-        PRINT_WARNING()
-        MESSAGE("We did not find any ParaView installed on the system. We will proceed to download it. "
-                "ParaView will be installed in the location ${CMAKE_THIRD_PARTY_DIR}/paraview. "
-                "Using brew Qt5 in ${Qt5_DIR} for ParaView.")
-        PRINT_LINE()
-      else()
-        PRINT_WARNING()
-        MESSAGE("We did not find any ParaView installed on the system. We will proceed to download it "
-                "together with Qt5. ParaView will be installed in the location ${CMAKE_THIRD_PARTY_DIR}/paraview.")
-        PRINT_LINE()
-        include(external/Qt)
-        PRINT_LINE()
-        MESSAGE("Qt5 was successfully downloaded and installed. We will proceed now with ParaView.")
-      endif(APPLE)
-      PRINT_LINE()
-      include(external/ParaView)
-
-      # We run again the find_package command such to find correctly the location of Qt and ParaView
-      find_package(Qt5 REQUIRED COMPONENTS Widgets HINTS ${Qt5_DIR} NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH)
-      if(Qt5_FOUND)
-        message("-- Found Qt5 (version ${Qt5_VERSION})")
-      endif()
-      find_package(ParaView ${CMAKE_BDM_PVVERSION} CONFIG COMPONENTS Catalyst PythonCatalyst VTKExtensionsIOCore
-                   PATHS ${CMAKE_THIRD_PARTY_DIR}/paraview)
-    endif()
-
-    include_directories(${ParaView_PREFIX_PATH}/include/paraview-${CMAKE_BDM_PVVERSION})
-    add_definitions("-DUSE_PARAVIEW")
+  find_package(ParaView REQUIRED CONFIG COMPONENTS
+               Catalyst PythonCatalyst VTKExtensionsIOCore)
+  set(CMAKE_BDM_PVVERSION
+      "${ParaView_VERSION_MAJOR}.${ParaView_VERSION_MINOR}")
+  add_definitions("-DUSE_PARAVIEW")
 endif()
 
 if(sbml)
@@ -576,7 +434,6 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf "${CMAKE_SOURCE_DIR}/third_pa
 
 # -------------------- build shared library libbiodynamo -----------------------
 # add the headers into the project
-include(${ROOT_USE_FILE})
 include_directories("${CMAKE_SOURCE_DIR}/src")
 include_directories("${CMAKE_SOURCE_DIR}/test")
 include_directories("${CMAKE_SOURCE_DIR}/third_party")
@@ -588,10 +445,6 @@ include_directories("${CMAKE_SOURCE_DIR}/third_party/cxxopts-v2.2.1")
 include_directories("${EXTRACTED_THIRD_PARTY_LIBS}")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/version")
 
-# Since including the directory where omp.h resides can cause rootcling to
-# search for system / C++ standard headers in that same directory, we instead
-# copy omp.h to our local build directory and include that
-fix_rootcling_omp_issue()
 fix_macos_opencl_header_issue()
 
 # build libbiodynamo
@@ -605,10 +458,9 @@ filter_list(LIB_SOURCES "${LIB_SOURCES}" "paraview/*")
 filter_list(HEADERS "${HEADERS}" "paraview/*")
 
 build_shared_library(biodynamo
-                   SELECTION selection-libbiodynamo.xml
                    SOURCES ${LIB_SOURCES}
                    HEADERS ${HEADERS}
-                   LIBRARIES ${BDM_REQUIRED_LIBRARIES} ${ROOT_LIBRARIES})
+                   LIBRARIES ${BDM_REQUIRED_LIBRARIES})
 
 # libbiodynamo must be built before optimlib; otherwise optimlib could be missing during
 # the linking stage of libbiodynamo
@@ -622,17 +474,11 @@ if(paraview)
 
   # We link against python3 libraries, so that the paraview libraries can
   # resolve missing python symbols when creating binaries
-  if(APPLE)
-    set(REQUIRED_PARAVIEW_LIBRARIES "${ParaView_LIBRARIES};${Python3_LIBRARIES}")
-  else()
-    set(REQUIRED_PARAVIEW_LIBRARIES "${ParaView_LIBRARIES};${Python_LIBRARIES}")
-  endif()
+  set(REQUIRED_PARAVIEW_LIBRARIES "${ParaView_LIBRARIES}")
   build_shared_library(VisualizationAdaptor
-                    SELECTION selection-libVisualizationAdaptor.xml
                     SOURCES ${PV_SOURCES}
                     HEADERS ${PV_HEADERS}
-                    LIBRARIES ${REQUIRED_PARAVIEW_LIBRARIES} biodynamo
-                    PLUGIN "TRUE")
+                    LIBRARIES ${REQUIRED_PARAVIEW_LIBRARIES} biodynamo)
   set(REQUIRED_PARAVIEW_LIBRARIES "${REQUIRED_PARAVIEW_LIBRARIES};VisualizationAdaptor")
 
   if(LINUX)
@@ -688,8 +534,6 @@ add_custom_target(libbdmclean COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/C
 add_custom_target(bdmclean)
 add_dependencies(bdmclean libbdmclean)
 
-generate_rootlogon()
-
 # create cmake files used by external builds
 configure_file("cmake/UseBioDynaMo.cmake.in" "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/UseBioDynaMo.cmake" @ONLY)
 
@@ -711,7 +555,6 @@ if (test)
                          ${CMAKE_SOURCE_DIR}/test/unit/core/execution_context/*.cc
                          ${CMAKE_SOURCE_DIR}/test/unit/core/memory/*.cc
                          ${CMAKE_SOURCE_DIR}/test/unit/core/operation/*.cc
-                         ${CMAKE_SOURCE_DIR}/test/unit/core/multi_simulation/*.cc
                          ${CMAKE_SOURCE_DIR}/test/unit/core/param/*.cc
                          ${CMAKE_SOURCE_DIR}/test/unit/core/agent/*.cc
                          ${CMAKE_SOURCE_DIR}/test/unit/core/util/*.cc
@@ -768,9 +611,6 @@ if(benchmark)
   include(Benchmarking)
 endif()
 
-# -------------------- Generate notebooks --------------------------------------
-include(Notebooks)
-
 # -------------------- Install configuration -----------------------------------
 include(Installation)
 
@@ -805,9 +645,9 @@ install_inside_build()
 #---Populate the configure arguments returned by 'bdm-config --config'
 get_cmake_property(variables CACHE_VARIABLES)
 foreach(var ${variables})
-  if(("${var}" MATCHES "_(LIBRARIES|LIBRARY|INCLUDE|VERSION)") AND
-     (NOT "${${var}}" STREQUAL "") AND
-     (NOT "${${var}}" MATCHES "NOTFOUND"))
+  if((var MATCHES "_(LIBRARIES|LIBRARY|INCLUDE|VERSION)") AND
+     (NOT ${${var}} STREQUAL "") AND
+     (NOT ${var} MATCHES "NOTFOUND"))
     if (var MATCHES "^QT_")
       # filter out the very long list of Qt libraries and include dirs
       if (var MATCHES "(QT_LIBRARY_DIR|QT_QTCORE_INCLUDE_DIR)")
@@ -822,10 +662,13 @@ foreach(var ${variables})
 endforeach()
 
 #--Local bdm-config and thisbdm
-EXECUTE_PROCESS(COMMAND ${ROOT_CONFIG_EXECUTABLE} --arch COMMAND tr -d '\n' OUTPUT_VARIABLE architecture)
-EXECUTE_PROCESS(COMMAND ${ROOT_CONFIG_EXECUTABLE} --platform COMMAND tr -d '\n' OUTPUT_VARIABLE platform)
-EXECUTE_PROCESS(COMMAND ${ROOT_CONFIG_EXECUTABLE} --version COMMAND tr -d '\n' OUTPUT_VARIABLE rootvers)
-EXECUTE_PROCESS(COMMAND ${ROOT_CONFIG_EXECUTABLE} --ncpu COMMAND tr -d '\n' OUTPUT_VARIABLE ncpu)
+set(architecture "${CMAKE_SYSTEM_PROCESSOR}")
+set(platform "${CMAKE_SYSTEM_NAME}")
+include(ProcessorCount)
+ProcessorCount(ncpu)
+if(NOT ncpu)
+  set(ncpu 1)
+endif()
 get_property(cxxdefinesraw DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY COMPILE_DEFINITIONS)
 
 set(altcxx ${CMAKE_CXX_COMPILER})

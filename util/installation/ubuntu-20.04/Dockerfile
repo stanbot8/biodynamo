@@ -20,11 +20,9 @@ RUN if ! [ -L /etc/localtime ]; then \
       ln -fs /usr/share/zoneinfo/Europe/Berlin /etc/localtime; \
     fi
 
-# man required by ROOT
 RUN apt-get update && apt-get install -y \
   git \
   sudo \
-  man \
   software-properties-common \
   wget \
   xvfb

@@ -32,14 +32,6 @@ function(GenerateStaticFiles TARGET FLAGS)
   endif()
   add_dependencies(${TARGET} doc)
 
-  # BDM notebook dependency
-  if (notebooks)
-    add_dependencies(${TARGET} notebooks)
-  else()
-    message(FATAL_ERROR "You cannot build the website without building the BioDynaMo notebooks first.
-Enable the notebook feature by adding the following cmake parameter: -Dnotebooks=ON
-")
-  endif()
 endfunction()
 
 if (website)

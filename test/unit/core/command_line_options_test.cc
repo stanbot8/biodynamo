@@ -28,8 +28,6 @@ TEST(CommandLineOptionsTest, CoreOptions) {
 
   EXPECT_EQ("binary_name", clo.GetSimulationName());
   EXPECT_EQ(0u, clo.Get<std::vector<std::string>>("config").size());
-  EXPECT_EQ("", clo.Get<std::string>("backup"));
-  EXPECT_EQ("", clo.Get<std::string>("restore"));
 }
 
 TEST(CommandLineOptionsTest, MultipleOptions) {

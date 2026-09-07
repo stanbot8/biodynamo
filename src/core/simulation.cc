@@ -47,16 +47,16 @@
 #include "core/util/string.h"
 #include "core/util/thread_info.h"
 #include "core/util/timing.h"
-#include "core/visualization/root/adaptor.h"
 #include "memory_usage.h"
 #ifdef USE_LIBGIT2
 #include "core/util/git_tracker.h"
 #endif  // USE_LIBGIT2
 
-#include <TEnv.h>
-#include <TROOT.h>
-
 namespace bdm {
+
+namespace {
+constexpr double kBytesPerMebibyte = 1024.0 * 1024.0;
+}  // namespace
 
 /// Implementation for `Simulation`:
 /// It must be separate to avoid circular dependencies.
@@ -67,22 +67,17 @@ Simulation* Simulation::active_ = nullptr;
 
 Simulation* Simulation::GetActive() { return active_; }
 
-Simulation::Simulation(TRootIOCtor* p) {}
-
 Simulation::Simulation(int argc, const char** argv,
                        const std::vector<std::string>& config_files)
-    : Simulation(
-          argc, argv, [](auto* param) {}, config_files) {}
+    : Simulation(argc, argv, [](auto* param) {}, config_files) {}
 
 Simulation::Simulation(const std::string& simulation_name,
                        const std::vector<std::string>& config_files)
-    : Simulation(
-          simulation_name, [](auto* param) {}, config_files) {}
+    : Simulation(simulation_name, [](auto* param) {}, config_files) {}
 
 Simulation::Simulation(CommandLineOptions* clo,
                        const std::vector<std::string>& config_files) {
-  Initialize(
-      clo, [](auto* param) {}, config_files);
+  Initialize(clo, [](auto* param) {}, config_files);
 }
 
 Simulation::Simulation(CommandLineOptions* clo,
@@ -106,35 +101,6 @@ Simulation::Simulation(const std::string& simulation_name,
   Initialize(&options, set_param, config_files);
 }
 
-void Simulation::Restore(Simulation&& restored) {
-  // random_
-  if (random_.size() != restored.random_.size()) {
-    Log::Warning("Simulation", "The restore file (", param_->restore_file,
-                 ") was run with a different number of threads. Can't restore "
-                 "complete random number generator state.");
-    uint64_t min = std::min(random_.size(), restored.random_.size());
-    for (uint64_t i = 0; i < min; i++) {
-      *(random_[i]) = *(restored.random_[i]);
-    }
-  } else {
-    for (uint64_t i = 0; i < random_.size(); i++) {
-      *(random_[i]) = *(restored.random_[i]);
-    }
-  }
-
-  // param and rm
-  param_->Restore(std::move(*restored.param_));
-  restored.param_ = nullptr;
-  *rm_ = std::move(*restored.rm_);
-  restored.rm_ = nullptr;
-
-  *time_series_ = std::move(*restored.time_series_);
-
-  // name_ and unique_name_
-  InitializeUniqueName(restored.name_);
-  InitializeOutputDir();
-}
-
 std::ostream& operator<<(std::ostream& os, Simulation& sim) {
   os << std::endl;
 
@@ -150,7 +116,7 @@ std::ostream& operator<<(std::ostream& os, Simulation& sim) {
   os << "Simulation name\t\t\t: " << sim.GetUniqueName() << std::endl;
   os << "Total simulation runtime\t: " << (sim.dtor_ts_ - sim.ctor_ts_) << " ms"
      << std::endl;
-  os << "Peak memory usage (MB)\t\t: " << (getPeakRSS() / 1048576.0)
+  os << "Peak memory usage (MB)\t\t: " << (getPeakRSS() / kBytesPerMebibyte)
      << std::endl;
   os << "Number of iterations executed\t: "
      << sim.scheduler_->GetSimulatedSteps() << std::endl;
@@ -159,10 +125,6 @@ std::ostream& operator<<(std::ostream& os, Simulation& sim) {
   sim.rm_->ForEachDiffusionGrid([&os](auto* dgrid) { dgrid->PrintInfo(os); });
 
   os << "Output directory\t\t: " << sim.GetOutputDir() << std::endl;
-  os << "  size\t\t\t\t: "
-     << gSystem->GetFromPipe(
-            Concat("du -sh ", sim.GetOutputDir(), " | cut -f1").c_str())
-     << std::endl;
   os << "BioDynaMo version:\t\t: " << Version::String() << std::endl;
   os << "BioDynaMo real type:\t\t: " << kRealtName << std::endl;
   os << std::endl;
@@ -179,10 +141,6 @@ std::ostream& operator<<(std::ostream& os, Simulation& sim) {
   os << std::endl;
   os << "***********************************************" << std::endl;
   os << std::endl;
-  os << "\033[1mParameters\033[0m" << std::endl;
-  os << sim.param_->ToJsonString();
-  os << std::endl;
-  os << "***********************************************" << std::endl;
   os << "***********************************************" << std::endl;
 
   return os;
@@ -294,10 +252,6 @@ void Simulation::ReplaceScheduler(Scheduler* scheduler) {
 void Simulation::Initialize(CommandLineOptions* clo,
                             const std::function<void(Param*)>& set_param,
                             const std::vector<std::string>& config_files) {
-  // Initialize a thread-safe ROOT instance
-  TROOT(name_.c_str(), "BioDynaMo");
-  ROOT::EnableThreadSafety();
-
   ctor_ts_ = bdm::Timing::Timestamp();
   id_ = counter_++;
   Activate();
@@ -399,33 +353,9 @@ void Simulation::InitializeRuntimeParams(
         "command.");
   }
 
-  static bool read_env = false;
-  if (!read_env) {
-    // Read, only once, bdm.rootrc to set BioDynaMo-related settings for ROOT
-    std::stringstream os;
-    os << std::getenv("BDMSYS") << "/etc/bdm.rootrc";
-    gEnv->ReadFile(os.str().c_str(), kEnvUser);
-    read_env = true;
-  }
-
   // Process `--config` arguments
   LoadConfigFiles(ctor_config_files,
                   clo->Get<std::vector<std::string>>("config"));
-
-  // Process `--inline-config` arguments
-  auto inline_configs = clo->Get<std::vector<std::string>>("inline-config");
-  if (inline_configs.size()) {
-    for (auto& inline_config : inline_configs) {
-      param_->MergeJsonPatch(inline_config);
-    }
-  }
-
-  if (clo->Get<std::string>("backup") != "") {
-    param_->backup_file = clo->Get<std::string>("backup");
-  }
-  if (clo->Get<std::string>("restore") != "") {
-    param_->restore_file = clo->Get<std::string>("restore");
-  }
 
   // Handle "cuda" and "opencl" arguments
   if (clo->Get<bool>("cuda")) {
@@ -450,9 +380,6 @@ void Simulation::InitializeRuntimeParams(
     is_gpu_environment_initialized_ = true;
   }
 
-  // Removing this line causes an unexplainable segfault due to setting the
-  // gErrorIngoreLevel global parameter of ROOT. We need to log at least one
-  // thing before setting that parameter.
   Log::Info("", "Initialize new simulation using BioDynaMo ",
             Version::String());
 }
@@ -460,9 +387,7 @@ void Simulation::InitializeRuntimeParams(
 void Simulation::LoadConfigFiles(const std::vector<std::string>& ctor_configs,
                                  const std::vector<std::string>& cli_configs) {
   constexpr auto kTomlConfigFile = "bdm.toml";
-  constexpr auto kJsonConfigFile = "bdm.json";
   constexpr auto kTomlConfigFileParentDir = "../bdm.toml";
-  constexpr auto kJsonConfigFileParentDir = "../bdm.json";
   // find config file
   std::vector<std::string> configs = {};
   if (ctor_configs.size()) {
@@ -496,10 +421,6 @@ void Simulation::LoadConfigFiles(const std::vector<std::string>& ctor_configs,
       configs.push_back(kTomlConfigFile);
     } else if (FileExists(kTomlConfigFileParentDir)) {
       configs.push_back(kTomlConfigFileParentDir);
-    } else if (FileExists(kJsonConfigFile)) {
-      configs.push_back(kJsonConfigFile);
-    } else if (FileExists(kJsonConfigFileParentDir)) {
-      configs.push_back(kJsonConfigFileParentDir);
     }
   }
 
@@ -509,18 +430,13 @@ void Simulation::LoadConfigFiles(const std::vector<std::string>& ctor_configs,
       if (EndsWith(config, ".toml")) {
         auto toml = cpptoml::parse_file(config);
         param_->AssignFromConfig(toml);
-      } else if (EndsWith(config, ".json")) {
-        std::ifstream ifs(config);
-        std::stringstream buffer;
-        buffer << ifs.rdbuf();
-        param_->MergeJsonPatch(buffer.str());
       }
       Log::Info("Simulation::LoadConfigFiles",
                 "Processed config file: ", config);
     }
   } else {
     Log::Info("Simulation::LoadConfigFiles", "Default config file ",
-              kTomlConfigFile, " or ", kJsonConfigFile,
+              kTomlConfigFile,
               " not found in `.` or `..` directory. No other config file was "
               "specified as command line parameter or passed to the "
               "constructor of bdm::Simulation.");

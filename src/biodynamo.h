@@ -22,9 +22,7 @@
 #include "core/agent/cell_division_event.h"
 #include "core/agent/new_agent_event.h"
 #include "core/agent/spherical_agent.h"
-#include "core/analysis/line_graph.h"
 #include "core/analysis/reduce.h"
-#include "core/analysis/style.h"
 #include "core/analysis/time_series.h"
 #include "core/behavior/behavior.h"
 #include "core/behavior/chemotaxis.h"
@@ -44,9 +42,7 @@
 #include "core/shape.h"
 #include "core/substance_initializers.h"
 #include "core/util/filesystem.h"
-#include "core/util/root.h"
 #include "core/util/timing.h"
 #include "core/util/vtune.h"
-#include "core/visualization/root/notebook_util.h"
 
 #endif  // BIODYNAMO_H_

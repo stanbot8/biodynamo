@@ -22,10 +22,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "core/analysis/style.h"
 #include "core/param/param_group.h"
 #include "core/real_t.h"
-#include "core/util/root.h"
 #include "core/util/type.h"
 
 namespace bdm {
@@ -40,20 +38,6 @@ struct Param {
   ~Param();
 
   Param(const Param& other);
-
-  void Restore(Param&& other);
-
-  /// Returns a Json representation of this parameter and all
-  /// ParamGroupeter.
-  /// The groups_ data member has been flattened to simplify
-  /// JSON merge patches (https://tools.ietf.org/html/rfc7386).
-  std::string ToJsonString() const;
-
-  /// Applies a JSON merge patch (https://tools.ietf.org/html/rfc7386)
-  /// to this parameter and ParamGroupeter.
-  /// The groups_ data member must be flattened. See output of
-  /// `ToJsonString()`.
-  void MergeJsonPatch(const std::string& patch);
 
   template <typename TParamGroup>
   const TParamGroup* Get() const {
@@ -147,34 +131,6 @@ struct Param {
   /// the date-time of your simulation `YYYY-MM-DD-HH:MM:SS`. Note that you will
   /// inevitably use more disk space with this option.
   bool remove_output_dir_contents = true;
-
-  /// Backup file name for full simulation backups\n
-  /// Path is relative to working directory.\n
-  /// Default value: `""` (no backups will be made)\n
-  /// TOML config file:
-  ///
-  ///     [simulation]
-  ///     backup_file = <path>/<filename>.root
-  /// Command line argument: `-b, --backup`
-  std::string backup_file = "";
-
-  /// File name to restore simulation from\n
-  /// Path is relative to working directory.\n
-  /// Default value: `""` (no restore will be made)\n
-  /// TOML config file:
-  ///
-  ///     [simulation]
-  ///     restore_file = <path>/<filename>.root
-  /// Command line argument: `-r, --restore`
-  std::string restore_file = "";
-
-  /// Specifies the interval (in seconds) in which backups will be performed.\n
-  /// Default Value: `1800` (every half an hour)\n
-  /// TOML config file:
-  ///
-  ///     [simulation]
-  ///     backup_interval = 1800  # backup every half an hour
-  uint32_t backup_interval = 1800;
 
   /// Time between two simulation steps, in hours.
   /// Default value: `0.01`\n
@@ -311,14 +267,6 @@ struct Param {
   ///     export = false
   bool export_visualization = false;
 
-  /// Use ROOT for enable visualization.\n
-  /// Default value: `false`\n
-  /// TOML config file:
-  ///
-  ///     [visualization]
-  ///     root = false
-  bool root_visualization = false;
-
   /// Enable insitu visualization with a custom python pipeline
   /// Default value:
   /// `"<path-to-bdm>/include/core/visualization/paraview/default_insitu_pipeline.py"`\n
@@ -365,9 +313,10 @@ struct Param {
   /// Every agent defines the minimum set of data members which
   /// are required to visualize it. (e.g. Cell: `position_` and `diameter_`).\n
   /// With this parameter it is also possible to extend the number of data
-  /// members that are sent to the visualization engine.
+  /// members that are sent to the visualization engine. Each additional
+  /// member must be exposed by the agent's `GetVisualizationData` override as
+  /// `std::vector<real_t>`, `std::vector<int>`, or `std::vector<uint64_t>`.
   /// Default value: empty (no agent will be visualized)\n
-  /// NB: This data member is not backed up, due to a ROOT error.
   /// TOML config file:
   ///
   ///     [visualization]
@@ -382,8 +331,7 @@ struct Param {
   ///       # The former block can be repeated for further agents
   ///       [[visualize_agent]]
   ///       name = "Neurite"
-  std::map<std::string, std::set<std::string>>
-      visualize_agents;  ///<  JSON_object
+  std::map<std::string, std::set<std::string>> visualize_agents;
 
   struct VisualizeDiffusion {
     std::string name;
@@ -535,26 +483,6 @@ struct Param {
   ///     minimize_memory_while_rebalancing = true
   bool minimize_memory_while_rebalancing = true;
 
-  /// MappedDataArrayMode options:
-  ///   `kZeroCopy`: access agent data directly only if it is
-  ///                requested. \n
-  ///   `kCache`:    Like `kZeroCopy` but stores the results in contiguous
-  ///                array, to speed up access if it is used again.\n
-  ///   `kCopy`:     Copy all data elements to a contiguous array at
-  ///                initialization time. Serves requests from the cache.
-  enum MappedDataArrayMode { kZeroCopy = 0, kCopy, kCache };
-
-  /// This parameter sets the operation mode in `bdm::MappedDataArray`.\n
-  /// Allowed values are defined in `MappedDataArrayMode`\n
-  /// Possible values: zero-copy, cache, copy\n
-  /// Default value: `zero-copy`\n
-  /// TOML config file:
-  ///
-  ///     [performance]
-  ///     mapped_data_array_mode = "zero-copy"
-  Param::MappedDataArrayMode mapped_data_array_mode =
-      MappedDataArrayMode::kZeroCopy;
-
   // development values --------------------------------------------------------
   /// Statistics of profiling data; keeps track of the execution time of each
   /// operation at every timestep.\n
@@ -642,7 +570,6 @@ struct Param {
 
   /// Determines if agents' memory layout plots should be generated
   /// during load balancing.
-  bool plot_memory_layout = false;
 
   /// Assign values from config file to variables
   void AssignFromConfig(const std::shared_ptr<cpptoml::table>&);
@@ -652,7 +579,6 @@ struct Param {
   static std::unordered_map<ParamGroupUid, std::unique_ptr<ParamGroup>>
       registered_groups_;
   std::unordered_map<ParamGroupUid, ParamGroup*> groups_;
-  BDM_CLASS_DEF_NV(Param, 1);
 };
 
 }  // namespace bdm

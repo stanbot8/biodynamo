@@ -13,12 +13,10 @@
 // -----------------------------------------------------------------------------
 
 #include "core/analysis/time_series.h"
-#include <TBufferJSON.h>
 #include <iostream>
 #include "core/analysis/reduce.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"
-#include "core/util/io.h"
 #include "core/util/log.h"
 
 namespace bdm {
@@ -187,11 +185,6 @@ real_t TimeSeries::ComputeError(const TimeSeries& ts1, const TimeSeries& ts2) {
     error += Math::MSE(yref, ycurrent);
   }
   return error;
-}
-
-// -----------------------------------------------------------------------------
-void TimeSeries::Load(const std::string& full_filepath, TimeSeries** restored) {
-  GetPersistentObject(full_filepath.c_str(), "TimeSeries", *restored);
 }
 
 // -----------------------------------------------------------------------------
@@ -529,16 +522,6 @@ void TimeSeries::ListEntries() const {
   for (auto& p : data_) {
     std::cout << p.first << std::endl;
   }
-}
-
-// -----------------------------------------------------------------------------
-void TimeSeries::Save(const std::string& full_filepath) const {
-  WritePersistentObject(full_filepath.c_str(), "TimeSeries", *this, "recreate");
-}
-
-// -----------------------------------------------------------------------------
-void TimeSeries::SaveJson(const std::string& full_filepath) const {
-  TBufferJSON::ExportToFile(full_filepath.c_str(), this, Class());
 }
 
 }  // namespace experimental

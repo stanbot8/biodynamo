@@ -18,7 +18,7 @@ ExternalProject_Add(
   URL "${CMAKE_SOURCE_DIR}/third_party/gtest-1.17.0.zip"
   PREFIX "${CMAKE_CURRENT_BINARY_DIR}/gtest"
   CMAKE_ARGS
-    -DPYTHON_EXECUTABLE=${Python_EXECUTABLE}
+    -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
     -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
     -DCMAKE_VISIBILITY_INLINES_HIDDEN:BOOL=ON
     -DCMAKE_POLICY_DEFAULT_CMP0063=NEW
@@ -52,7 +52,9 @@ include_directories("${CMAKE_BINARY_DIR}/gtest/src/gtest/googletest/include")
 add_custom_target(run-check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
 
 # create target for running biodynamo-unit-tests
-add_custom_target(run-unit-tests COMMAND ${CMAKE_BINARY_DIR}/bin/biodynamo-unit-tests)
+add_custom_target(run-unit-tests
+  COMMAND ${CMAKE_BINARY_DIR}/launcher.sh
+          ${CMAKE_BINARY_DIR}/bin/biodynamo-unit-tests)
 add_dependencies(run-unit-tests biodynamo-unit-tests)
 
 # add custom clean target for test project
@@ -96,9 +98,9 @@ function(bdm_add_test_executable TEST_TARGET)
   if (valgrind AND VALGRIND_FOUND AND NOT coverage)
     # filter out tests that would take too long if tested under valgrind 
     add_test(NAME "valgrind_${TEST_TARGET}"
-      COMMAND  ${CMAKE_BINARY_DIR}/launcher.sh ${CMAKE_SOURCE_DIR}/util/valgrind.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_TARGET} -- --gtest_filter=-*DeathTest.*:IOTest.InvalidRead:SchedulerTest.Backup:ResourceManagerTest.SortAndForEachAgentParallel*:InlineVector*:NeuriteElementBehaviour.*:MechanicalInteraction.*:DiffusionTest.*Convergence*:FLAKY_ParaviewIntegrationTest*:AgentVectorTest.Equality:SchedulerTest::LoadAndBalanceAfterEnvironment)
+      COMMAND  ${CMAKE_BINARY_DIR}/launcher.sh ${CMAKE_SOURCE_DIR}/util/valgrind.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_TARGET} -- --gtest_filter=-*DeathTest.*:IOTest.InvalidRead:ResourceManagerTest.SortAndForEachAgentParallel*:InlineVector*:NeuriteElementBehaviour.*:MechanicalInteraction.*:DiffusionTest.*Convergence*:FLAKY_ParaviewIntegrationTest*:AgentVectorTest.Equality:SchedulerTest::LoadAndBalanceAfterEnvironment)
     add_custom_target(run-valgrind
-      COMMAND  ${CMAKE_BINARY_DIR}/launcher.sh ${CMAKE_SOURCE_DIR}/util/valgrind.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_TARGET} -- --gtest_filter=-*DeathTest.*:IOTest.InvalidRead:SchedulerTest.Backup:ResourceManagerTest.SortAndForEachAgentParallel*:InlineVector*:NeuriteElementBehaviour.*:MechanicalInteraction.*:DiffusionTest.*Convergence*:FLAKY_ParaviewIntegrationTest*:AgentVectorTest.Equality:SchedulerTest::LoadAndBalanceAfterEnvironment)
+      COMMAND  ${CMAKE_BINARY_DIR}/launcher.sh ${CMAKE_SOURCE_DIR}/util/valgrind.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_TARGET} -- --gtest_filter=-*DeathTest.*:IOTest.InvalidRead:ResourceManagerTest.SortAndForEachAgentParallel*:InlineVector*:NeuriteElementBehaviour.*:MechanicalInteraction.*:DiffusionTest.*Convergence*:FLAKY_ParaviewIntegrationTest*:AgentVectorTest.Equality:SchedulerTest::LoadAndBalanceAfterEnvironment)
     add_dependencies(run-valgrind biodynamo-unit-tests)
   endif()
 

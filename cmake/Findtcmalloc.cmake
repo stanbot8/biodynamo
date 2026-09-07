@@ -1,4 +1,3 @@
-# from ROOT
 # - Locate tcmalloc library
 # Defines:
 #

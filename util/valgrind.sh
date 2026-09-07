@@ -13,8 +13,6 @@
 #
 # -----------------------------------------------------------------------------
 
-BDM_PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
-
 valgrind \
   --track-origins=yes \
   --num-callers=50 \
@@ -24,8 +22,6 @@ valgrind \
   --show-leak-kinds=all \
   --gen-suppressions=all \
   --show-reachable=no \
-  --suppressions=${BDM_PROJECT_DIR}/util/valgrind-bdm.supp \
-  --suppressions=$ROOTSYS/etc/valgrind-root.supp \
   --error-exitcode=1 \
   --num-callers=25 \
   "$@"
