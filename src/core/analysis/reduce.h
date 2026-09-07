@@ -41,7 +41,6 @@ struct Reducer : public Functor<void, Agent*> {
   /// Resets the internal state between calculations.
   virtual void Reset() = 0;
   virtual Reducer* NewCopy() const = 0;
-  BDM_CLASS_DEF(Reducer, 1)
 };
 
 // -----------------------------------------------------------------------------
@@ -121,48 +120,12 @@ class GenericReducer : public Reducer<TResult> {
   }
 
  private:
-  SharedData<T> tl_results_;                                     //!
-  void (*agent_function_)(Agent*, T*) = nullptr;                 //!
-  T (*reduce_partial_results_)(const SharedData<T>&) = nullptr;  //!
-  bool (*filter_)(Agent*) = nullptr;                             //!
-  TResult (*post_process_)(TResult) = nullptr;                   //!
-  BDM_CLASS_DEF_OVERRIDE(GenericReducer, 1)
+  SharedData<T> tl_results_;
+  void (*agent_function_)(Agent*, T*) = nullptr;
+  T (*reduce_partial_results_)(const SharedData<T>&) = nullptr;
+  bool (*filter_)(Agent*) = nullptr;
+  TResult (*post_process_)(TResult) = nullptr;
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-// The custom streamer is needed because ROOT can't stream function pointers
-// by default.
-template <typename T, typename TResult>
-inline void GenericReducer<T, TResult>::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    R__b.ReadClassBuffer(GenericReducer::Class(), this);
-    Long64_t l;
-    R__b.ReadLong64(l);
-    this->agent_function_ = reinterpret_cast<void (*)(Agent*, T*)>(l);
-    R__b.ReadLong64(l);
-    this->reduce_partial_results_ =
-        reinterpret_cast<T (*)(const SharedData<T>&)>(l);
-    R__b.ReadLong64(l);
-    this->filter_ = reinterpret_cast<bool (*)(Agent*)>(l);
-    R__b.ReadLong64(l);
-    this->post_process_ = reinterpret_cast<TResult (*)(TResult)>(l);
-  } else {
-    R__b.WriteClassBuffer(GenericReducer::Class(), this);
-    Long64_t l = reinterpret_cast<Long64_t>(this->agent_function_);
-    R__b.WriteLong64(l);
-    l = reinterpret_cast<Long64_t>(this->reduce_partial_results_);
-    R__b.WriteLong64(l);
-    l = reinterpret_cast<Long64_t>(this->filter_);
-    R__b.WriteLong64(l);
-    l = reinterpret_cast<Long64_t>(this->post_process_);
-    R__b.WriteLong64(l);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 /// Iterates over all agents executing the `agent_functor` and updating a
 /// a thread-local and therefore partial result.
@@ -270,37 +233,10 @@ struct Counter : public Reducer<TResult> {
   Reducer<TResult>* NewCopy() const override { return new Counter(*this); }
 
  private:
-  SharedData<uint64_t> tl_results_;             //!
-  bool (*condition_)(Agent*) = nullptr;         //!
-  TResult (*post_process_)(TResult) = nullptr;  //!
-  BDM_CLASS_DEF_OVERRIDE(Counter, 1)
+  SharedData<uint64_t> tl_results_;
+  bool (*condition_)(Agent*) = nullptr;
+  TResult (*post_process_)(TResult) = nullptr;
 };
-
-// The following custom streamer should be visible to rootcling for dictionary
-// generation, but not to the interpreter!
-#if (!defined(__CLING__) || defined(__ROOTCLING__)) && defined(USE_DICT)
-
-// The custom streamer is needed because ROOT can't stream function pointers
-// by default.
-template <typename TResult>
-inline void Counter<TResult>::Streamer(TBuffer& R__b) {
-  if (R__b.IsReading()) {
-    R__b.ReadClassBuffer(Counter::Class(), this);
-    Long64_t l;
-    R__b.ReadLong64(l);
-    this->condition_ = reinterpret_cast<bool (*)(Agent*)>(l);
-    R__b.ReadLong64(l);
-    this->post_process_ = reinterpret_cast<TResult (*)(TResult)>(l);
-  } else {
-    R__b.WriteClassBuffer(Counter::Class(), this);
-    Long64_t l = reinterpret_cast<Long64_t>(this->condition_);
-    R__b.WriteLong64(l);
-    l = reinterpret_cast<Long64_t>(this->post_process_);
-    R__b.WriteLong64(l);
-  }
-}
-
-#endif  // !defined(__CLING__) || defined(__ROOTCLING__)
 
 /// Counts the number of agents for which `condition` evaluates to true.
 /// Let's assume we want to count all infected agents in a virus spreading

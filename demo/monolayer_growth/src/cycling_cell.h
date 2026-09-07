@@ -25,7 +25,7 @@ enum CellState { kG1, kS, kG2, kM };
 
 class CyclingCell : public Cell {  // our object extends the Cell object
                                    // create the header with our new data member
-  BDM_AGENT_HEADER(CyclingCell, Cell, 1);
+  BDM_AGENT_HEADER(CyclingCell, Cell);
 
  public:
   CyclingCell() {}

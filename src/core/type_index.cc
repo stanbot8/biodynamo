@@ -14,13 +14,11 @@
 
 #include "core/type_index.h"
 
-#include <TClass.h>
-
 namespace bdm {
 
 // -----------------------------------------------------------------------------
 void TypeIndex::Add(Agent* agent) {
-  auto& type_vector = data_[agent->IsA()];
+  auto& type_vector = data_[agent->GetTypeName()];
   auto uid = agent->GetUid();
   if (index_.size() <= uid.GetIndex()) {
     Reserve(uid.GetIndex() + 1);
@@ -32,14 +30,14 @@ void TypeIndex::Add(Agent* agent) {
 // -----------------------------------------------------------------------------
 void TypeIndex::Update(Agent* new_agent) {
   auto idx = index_[new_agent->GetUid()];
-  auto& type_vector = data_[new_agent->IsA()];
+  auto& type_vector = data_[new_agent->GetTypeName()];
   type_vector[idx] = new_agent;
 }
 
 // -----------------------------------------------------------------------------
 void TypeIndex::Remove(Agent* agent) {
   auto idx = index_[agent->GetUid()];
-  auto& type_vector = data_[agent->IsA()];
+  auto& type_vector = data_[agent->GetTypeName()];
   if (idx == type_vector.size() - 1) {
     type_vector.pop_back();
   } else {
@@ -67,8 +65,9 @@ void TypeIndex::Reserve(uint64_t capacity) {
 }
 
 // -----------------------------------------------------------------------------
-const std::vector<Agent*>& TypeIndex::GetType(TClass* tclass) const {
-  return data_[tclass];
+const std::vector<Agent*>& TypeIndex::GetType(
+    const std::string& type_name) const {
+  return data_[type_name];
 }
 
 }  // namespace bdm

@@ -15,7 +15,6 @@
 #include "core/behavior/stateless_behavior.h"
 #include <gtest/gtest.h>
 #include "core/agent/cell_division_event.h"
-#include "unit/test_util/io_test.h"
 #include "unit/test_util/test_agent.h"
 #include "unit/test_util/test_util.h"
 
@@ -108,23 +107,5 @@ TEST(StatelessBehavior, Event) {
     }
   }
 }
-
-#ifdef USE_DICT
-// -----------------------------------------------------------------------------
-TEST_F(IOTest, StatelessBehavior) {
-  Simulation sim(TEST_NAME);
-
-  StatelessBehavior b(
-      [](Agent* a) { bdm_static_cast<TestAgent*>(a)->SetData(123); });
-
-  StatelessBehavior* restored;
-  BackupAndRestore(b, &restored);
-
-  TestAgent a;
-  restored->Run(&a);
-  EXPECT_EQ(123, a.GetData());
-}
-
-#endif  // USE_DICT
 
 }  // namespace bdm
