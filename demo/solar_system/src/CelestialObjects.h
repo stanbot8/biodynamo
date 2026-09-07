@@ -22,7 +22,7 @@ namespace astrophysics {
 // creating the custom agent that
 // defines celestial objects
 class CelestialObject : public Cell {
-  BDM_AGENT_HEADER(CelestialObject, Cell, 1);
+  BDM_AGENT_HEADER(CelestialObject, Cell);
 
  public:
   // constructors
@@ -51,7 +51,7 @@ class CelestialObject : public Cell {
 
 // Star subclass
 class Star : public CelestialObject {
-  BDM_AGENT_HEADER(Star, CelestialObject, 1);
+  BDM_AGENT_HEADER(Star, CelestialObject);
 
  public:
   Star() : CelestialObject() {}
@@ -65,7 +65,7 @@ class Star : public CelestialObject {
 
 // Planet subclass
 class Planet : public CelestialObject {
-  BDM_AGENT_HEADER(Planet, CelestialObject, 1);
+  BDM_AGENT_HEADER(Planet, CelestialObject);
 
  public:
   Planet() : CelestialObject() {}

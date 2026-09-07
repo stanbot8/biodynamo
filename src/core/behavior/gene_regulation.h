@@ -22,7 +22,6 @@
 #include "core/param/param.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"
-#include "core/util/root.h"
 
 namespace bdm {
 
@@ -34,7 +33,7 @@ namespace bdm {
 /// The user determines which method is picked in particular simulation
 /// through variable `Param::numerical_ode_solver`.
 class GeneRegulation : public Behavior {
-  BDM_BEHAVIOR_HEADER(GeneRegulation, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(GeneRegulation, Behavior);
 
  public:
   GeneRegulation() { AlwaysCopyToNew(); }

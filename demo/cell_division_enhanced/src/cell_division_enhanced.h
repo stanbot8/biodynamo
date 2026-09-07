@@ -33,7 +33,7 @@ inline int signum(const T& x) {
 namespace bdm {
 
 class MyCell : public Cell {
-  BDM_AGENT_HEADER(MyCell, Cell, 1);
+  BDM_AGENT_HEADER(MyCell, Cell);
 
  public:
   MyCell() : Cell() { UpdateVolume(); }

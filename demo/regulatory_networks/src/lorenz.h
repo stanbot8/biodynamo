@@ -18,21 +18,16 @@
 #include <fstream>
 #include <iostream>
 
-#ifndef __ROOTCLING__
 #include <boost/array.hpp>
 #include "boost/numeric/odeint.hpp"
 #include "boost/phoenix/core.hpp"
 #include "boost/phoenix/operator.hpp"
-#endif
 
-#ifndef __ROOTCLING__
 typedef boost::numeric::ublas::vector<double> b_vector_t;
 typedef boost::numeric::ublas::matrix<double> b_matrix_t;
-#endif
 
 namespace lorenz {
 
-#ifndef __ROOTCLING__
 struct ODE_system {
   void operator()(const b_vector_t& x, b_vector_t& dxdt, double t) const {
     dxdt[0] = sigma * x[1] - sigma * x[0];
@@ -71,8 +66,6 @@ struct ODE_output {
     std::clog << t << ',' << x[0] << ',' << x[1] << ',' << x[2] << std::endl;
   }
 };
-#endif
-
 inline int Simulate(int argc, const char** argv) {
   std::ofstream fout("lorenz.csv");
   // save the original buffer of std::clog
@@ -80,7 +73,6 @@ inline int Simulate(int argc, const char** argv) {
   // redirect std::clog to point to the above file
   std::clog.rdbuf(fout.rdbuf());
 
-#ifndef __ROOTCLING__
   b_vector_t xyz(3);
   xyz[0] = 1.0;
   xyz[1] = 1.0;
@@ -94,8 +86,6 @@ inline int Simulate(int argc, const char** argv) {
   // perform the time-integration
   integrate_const(stepper, std::make_pair(ODE_system(), ODE_jacobian()), xyz,
                   0.0, 30.0, 0.01, ODE_output());
-#endif
-
   // restore the original buffer of std::clog
   std::clog.rdbuf(orig_clog_buff);
 

@@ -26,7 +26,6 @@ namespace bdm {
 class AnalyticContinuum final : public ScalarField {
  public:
   AnalyticContinuum() = default;
-  explicit AnalyticContinuum(const TRootIOCtor *) {}
   ~AnalyticContinuum() final = default;
 
   void Initialize() final {}
@@ -57,8 +56,6 @@ class AnalyticContinuum final : public ScalarField {
     Log::Warning("AnalyticContinuum::GetGradient() not implemented");
     return {0, 0, 0};
   };
-
-  BDM_CLASS_DEF_OVERRIDE(AnalyticContinuum, 1);  // NOLINT
 
  private:
   real_t time_ = 0.0;
