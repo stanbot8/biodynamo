@@ -22,19 +22,13 @@
 #include "core/environment/environment.h"
 #include "core/simulation.h"
 #include "core/util/partition.h"
-#include "core/util/plot_memory_layout.h"
 #include "core/util/timing.h"
 
 namespace bdm {
 
 ResourceManager::ResourceManager() {
-  // Must be called prior any other function call to libnuma
-  if (auto ret = numa_available() == -1) {
-    Log::Fatal("ResourceManager",
-               "Call to numa_available failed with return code: ", ret);
-  }
-  agents_.resize(numa_num_configured_nodes());
-  agents_lb_.resize(numa_num_configured_nodes());
+  agents_.resize(thread_info_->GetNumaNodes());
+  agents_lb_.resize(thread_info_->GetNumaNodes());
 
   auto* param = Simulation::GetActive()->GetParam();
   if (param->export_visualization || param->insitu_visualization) {
@@ -65,8 +59,6 @@ void ResourceManager::ForEachAgentParallel(
     auto nid = thread_info_->GetNumaNode(tid);
     auto threads_in_numa = thread_info_->GetThreadsInNumaNode(nid);
     auto& numa_agents = agents_[nid];
-    assert(thread_info_->GetNumaNode(tid) == numa_node_of_cpu(sched_getcpu()));
-
     // use static scheduling for now
     auto correction = numa_agents.size() % threads_in_numa == 0 ? 0 : 1;
     auto chunk = numa_agents.size() / threads_in_numa + correction;
@@ -156,8 +148,6 @@ void ResourceManager::ForEachAgentParallel(
     auto p_numa_nodes = thread_info_->GetNumaNodes();
     auto p_max_threads = omp_get_max_threads();
     auto p_chunk = chunk;
-    assert(thread_info_->GetNumaNode(tid) == numa_node_of_cpu(sched_getcpu()));
-
     // dynamic scheduling
     uint64_t start = 0;
     uint64_t end = 0;
@@ -190,7 +180,7 @@ void ResourceManager::ForEachAgentParallel(
           old_count = (*(counters[current_tid]))++;
         }
       }  // work stealing loop numa_nodes_
-    }    // work stealing loop  threads
+    }  // work stealing loop  threads
   }
 
   for (auto* counter : counters) {
@@ -242,10 +232,6 @@ void ResourceManager::LoadBalance() {
   // the environment before accessing it again.
   MarkEnvironmentOutOfSync();
   auto* param = Simulation::GetActive()->GetParam();
-  if (param->plot_memory_layout) {
-    PlotNeighborMemoryHistogram(true);
-  }
-
   // balance agents per numa node according to the number of
   // threads associated with each numa domain
   auto numa_nodes = thread_info_->GetNumaNodes();
@@ -268,10 +254,12 @@ void ResourceManager::LoadBalance() {
   // using first touch policy - page will be allocated to the numa domain of
   // the thread that accesses it first.
   // alternative, use numa_alloc_onnode.
-  int ret = numa_run_on_node(0);
-  if (ret != 0) {
-    Log::Fatal("ResourceManager",
-               "Run on numa node failed. Return code: ", ret);
+  if (thread_info_->IsNumaAvailable()) {
+    int ret = numa_run_on_node(0);
+    if (ret != 0) {
+      Log::Fatal("ResourceManager",
+                 "Run on numa node failed. Return code: ", ret);
+    }
   }
   auto* env = Simulation::GetActive()->GetEnvironment();
   auto lbi = env->GetLoadBalanceInfo();
@@ -295,8 +283,6 @@ void ResourceManager::LoadBalance() {
 #pragma omp barrier
 
     auto threads_in_numa = thread_info_->GetThreadsInNumaNode(nid);
-    assert(thread_info_->GetNumaNode(tid) == numa_node_of_cpu(sched_getcpu()));
-
     // use static scheduling
     auto correction = agent_per_numa[nid] % threads_in_numa == 0 ? 0 : 1;
     auto chunk = agent_per_numa[nid] / threads_in_numa + correction;
@@ -321,13 +307,6 @@ void ResourceManager::LoadBalance() {
 
   for (int n = 0; n < numa_nodes; n++) {
     agents_[n].swap(agents_lb_[n]);
-    if (param->plot_memory_layout) {
-      PlotMemoryLayout(agents_[n], n);
-      PlotMemoryHistogram(agents_[n], n);
-    }
-  }
-  if (param->plot_memory_layout) {
-    PlotNeighborMemoryHistogram();
   }
 
   if (Simulation::GetActive()->GetParam()->debug_numa) {
