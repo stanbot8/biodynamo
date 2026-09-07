@@ -20,47 +20,10 @@
 #include "core/agent/agent_pointer.h"
 #include "core/resource_manager.h"
 #include "core/simulation.h"
-#include "unit/test_util/io_test.h"
 #include "unit/test_util/test_agent.h"
 
 namespace bdm {
 namespace agent_pointer_test_internal {
-
-inline void RunIOTest(Simulation* sim, AgentPointerMode mode) {
-  auto prev_mode = gAgentPointerMode;
-  gAgentPointerMode = mode;
-
-  auto* rm = sim->GetResourceManager();
-  rm->AddAgent(new TestAgent(123));
-  TestAgent* so2 = new TestAgent(456);
-  rm->AddAgent(so2);
-
-  AgentPointer<TestAgent> agent_ptr(so2->GetUid());
-  AgentPointer<TestAgent>* restored;
-
-  BackupAndRestore(agent_ptr, &restored);
-
-  EXPECT_TRUE(*restored != nullptr);
-  EXPECT_EQ(456, (*restored)->GetData());
-
-  // restore gAgentPointerMode
-  gAgentPointerMode = prev_mode;
-}
-
-inline void IOTestAgentPointerNullptr(AgentPointerMode mode) {
-  auto prev_mode = gAgentPointerMode;
-  gAgentPointerMode = mode;
-
-  AgentPointer<TestAgent> null_agent_pointer;
-  AgentPointer<TestAgent>* restored = nullptr;
-
-  BackupAndRestore(null_agent_pointer, &restored);
-
-  EXPECT_TRUE(*restored == nullptr);
-
-  // restore gAgentPointerMode
-  gAgentPointerMode = prev_mode;
-}
 
 }  // namespace agent_pointer_test_internal
 }  // namespace bdm

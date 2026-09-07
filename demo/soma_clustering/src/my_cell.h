@@ -23,7 +23,7 @@ namespace soma_clustering {
 // Define my custom cell, which extends Cell by adding an extra
 // data member cell_type.
 class MyCell : public Cell {
-  BDM_AGENT_HEADER(MyCell, Cell, 1);
+  BDM_AGENT_HEADER(MyCell, Cell);
 
  public:
   MyCell() {}
@@ -32,6 +32,15 @@ class MyCell : public Cell {
   virtual ~MyCell() {}
 
   int GetCellType() const { return cell_type_; }
+
+  bool GetVisualizationData(const std::string& name,
+                            VisualizationData* values) const override {
+    if (name == "cell_type_") {
+      *values = std::vector<int>{cell_type_};
+      return true;
+    }
+    return Base::GetVisualizationData(name, values);
+  }
 
  private:
   int cell_type_;

@@ -24,7 +24,7 @@ namespace bdm {
 
 // Define growth behaviour
 struct GrowthAndCellCycle : public Behavior {
-  BDM_BEHAVIOR_HEADER(GrowthAndCellCycle, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(GrowthAndCellCycle, Behavior);
 
   GrowthAndCellCycle() { AlwaysCopyToNew(); }
   virtual ~GrowthAndCellCycle() {}

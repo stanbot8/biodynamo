@@ -22,7 +22,7 @@ namespace astrophysics {
 // creating the custom agent that
 // defines celestial objects
 class CelestialObject : public Cell {
-  BDM_AGENT_HEADER(CelestialObject, Cell, 1);
+  BDM_AGENT_HEADER(CelestialObject, Cell);
 
  public:
   // constructors
