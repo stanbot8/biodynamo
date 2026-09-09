@@ -835,6 +835,51 @@ TEST(DiffusionTest, EulerConvergenceDiffusion) {
   delete dgrid8;
 }
 
+TEST(DiffusionTest, EulerDepletionSelfBinding) {
+  auto set_param = [](auto* param) {
+    param->bound_space = Param::BoundSpaceMode::kClosed;
+    param->min_bound = -100;
+    param->max_bound = 100;
+    param->diffusion_boundary_condition = "closed";
+  };
+  Simulation simulation(TEST_NAME, set_param);
+  simulation.GetEnvironment()->Update();
+  auto* rm = simulation.GetResourceManager();
+  auto* grid = new EulerDepletionGrid(2, "ECM", 0, 0.1, 5);
+  grid->Initialize();
+  grid->SetUpperThreshold(1000000000000000);
+  rm->AddContinuum(grid);
+  Real3 source = {{0, 0, 0}};
+  grid->ChangeConcentrationBy(source, 4);
+  grid->SetBindingSubstance(2, 0.2);
+  grid->Diffuse(0.5);
+  EXPECT_NEAR(grid->GetAllConcentrations()[grid->GetBoxIndex(source)], 2.2,
+              1e-12);
+}
+
+TEST(DiffusionTest, EulerDepletionRepeatedSelfBinding) {
+  auto set_param = [](auto* param) {
+    param->bound_space = Param::BoundSpaceMode::kClosed;
+    param->min_bound = -100;
+    param->max_bound = 100;
+    param->diffusion_boundary_condition = "closed";
+  };
+  Simulation simulation(TEST_NAME, set_param);
+  simulation.GetEnvironment()->Update();
+  auto* rm = simulation.GetResourceManager();
+  auto* grid = new EulerDepletionGrid(2, "ECM", 0, 0.1, 5);
+  grid->Initialize();
+  grid->SetUpperThreshold(1000000000000000);
+  rm->AddContinuum(grid);
+  Real3 source = {{0, 0, 0}};
+  grid->ChangeConcentrationBy(source, 4);
+  grid->SetBindingSubstance(2, 0.1);
+  grid->SetBindingSubstance(2, 0.2);
+  grid->Diffuse(0.5);
+  EXPECT_NEAR(grid->GetAllConcentrations()[grid->GetBoxIndex(source)], 1.4,
+              1e-12);
+}
+
 TEST(DiffusionTest, EulerDepletionConvergenceExponentialDecay) {
   double simulation_time_step{0.1};
   auto set_param = [](auto* param) {

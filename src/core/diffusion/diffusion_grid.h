@@ -348,9 +348,15 @@ class DiffusionGrid : public ScalarField {
   /// can be calculated on the fly.
   void TurnOffGradientCalculation() { precompute_gradients_ = false; }
 
+ protected:
+  real_t* GetConcentrationPtr() { return c1_.data(); }
+  /// Buffer for next-timestep values.
+  real_t* GetScratchPtr() { return c2_.data(); }
+  void SwapBuffers() { c1_.swap(c2_); }
+  /// dc_[0] stores one minus the returned value.
+  real_t GetRawDiffusionCoefficient() const { return 1 - dc_[0]; }
+
  private:
-  friend class EulerGrid;
-  friend class EulerDepletionGrid;
   friend class TestGrid;  // class used for testing (e.g. initialization)
 
   void ParametersCheck(real_t dt);
