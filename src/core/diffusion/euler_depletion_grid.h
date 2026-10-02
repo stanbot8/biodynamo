@@ -94,8 +94,6 @@ class EulerDepletionGrid : public EulerGrid {
   std::vector<real_t> binding_coefficients_ = {};
   /// Vector of binding substances.
   std::vector<int> binding_substances_ = {};
-
-  BDM_CLASS_DEF_OVERRIDE(EulerDepletionGrid, 1);
 };
 
 }  // namespace bdm

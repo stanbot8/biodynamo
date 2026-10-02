@@ -15,7 +15,6 @@
 #ifndef CORE_GPU_CUDA_TIMER_H_
 #define CORE_GPU_CUDA_TIMER_H_
 
-#if !defined(__ROOTCLING__) && !defined(G__DICTIONARY)
 #ifdef USE_CUDA
 
 #include <iostream>
@@ -50,5 +49,4 @@ class CudaTimer {
 }  // namespace bdm
 
 #endif  // USE_CUDA
-#endif  // !__ROOTCLING__ && !G__DICTIONARY
 #endif  // CORE_GPU_CUDA_TIMER_H_

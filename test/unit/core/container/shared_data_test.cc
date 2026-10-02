@@ -31,11 +31,5 @@ TEST(SharedDataTest, ReSize) {
 // Test if shared data is occupying full cache lines.
 TEST(SharedDataTest, CacheLineAlignment) { RunCacheLineAlignmentTest(); }
 
-#ifdef USE_DICT
-
-TEST_F(IOTest, SharedData) { RunIOTest(); }
-
-#endif  // USE_DICT
-
 }  // namespace shared_data_test
 }  // namespace bdm

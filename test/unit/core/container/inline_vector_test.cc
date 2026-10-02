@@ -12,8 +12,10 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "unit/core/container/inline_vector_test.h"
 #include <new>
+
+#include "core/container/inline_vector.h"
+#include "gtest/gtest.h"
 
 size_t operator_new_calls_ = 0;
 
@@ -428,9 +430,5 @@ TEST(InlineVectorTest, erase_no_heap_last) {
   EXPECT_EQ(2u, cnt);
   EXPECT_EQ(2u, iv.size());
 }
-
-#ifdef USE_DICT
-TEST(InlineVectorTest, IO) { inline_vector_test_internal::RunIOTest(); }
-#endif  // USE_DICT
 
 }  // namespace bdm

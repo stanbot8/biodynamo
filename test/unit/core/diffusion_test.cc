@@ -33,8 +33,6 @@
 #include "core/visualization/paraview/adaptor.h"
 #endif  // USE_PARAVIEW
 
-#define ROOTFILE "bdmFile.root"
-
 namespace bdm {
 
 void CellFactory(const std::vector<Real3>& positions) {
@@ -581,74 +579,6 @@ TEST(DiffusionTest, ChangeConcentrationByLogistic) {
 
   delete dgrid;
 }
-
-#ifdef USE_DICT
-
-// Test if all the data members of the diffusion grid are correctly serialized
-// and deserialized with I/O
-TEST(DiffusionTest, IOTest) {
-  auto set_param = [](auto* param) {
-    param->bound_space = Param::BoundSpaceMode::kClosed;
-    param->min_bound = -50;
-    param->max_bound = 50;
-  };
-  Simulation simulation(TEST_NAME, set_param);
-  simulation.GetEnvironment()->Update();
-  remove(ROOTFILE);
-
-  EulerGrid* dgrid = new EulerGrid(0, "Kalium", 0.6, 0);
-
-  // Create a 100x100x100 diffusion grid with 20 boxes per dimension
-  dgrid->Initialize();
-  dgrid->SetUpperThreshold(42);
-  dgrid->SetLowerThreshold(-42);
-  dgrid->SetDecayConstant(0.01);
-
-  dgrid->SetBoundaryCondition(
-      std::make_unique<ConstantBoundaryCondition>(13.0));
-  dgrid->SetBoundaryConditionType(BoundaryConditionType::kDirichlet);
-
-  // write to root file
-  WritePersistentObject(ROOTFILE, "dgrid", *dgrid, "new");
-
-  // read back
-  EulerGrid* restored_dgrid = nullptr;
-  GetPersistentObject(ROOTFILE, "dgrid", restored_dgrid);
-
-  auto eps = abs_error<real_t>::value;
-
-  EXPECT_EQ("Kalium", restored_dgrid->GetContinuumName());
-  EXPECT_EQ(10, restored_dgrid->GetBoxLength());
-  EXPECT_EQ(42, restored_dgrid->GetUpperThreshold());
-  EXPECT_EQ(-42, restored_dgrid->GetLowerThreshold());
-  EXPECT_NEAR(0.4, restored_dgrid->GetDiffusionCoefficients()[0], eps);
-  EXPECT_NEAR(0.1, restored_dgrid->GetDiffusionCoefficients()[1], eps);
-  EXPECT_NEAR(0.1, restored_dgrid->GetDiffusionCoefficients()[2], eps);
-  EXPECT_NEAR(0.1, restored_dgrid->GetDiffusionCoefficients()[3], eps);
-  EXPECT_NEAR(0.1, restored_dgrid->GetDiffusionCoefficients()[4], eps);
-  EXPECT_NEAR(0.1, restored_dgrid->GetDiffusionCoefficients()[5], eps);
-  EXPECT_NEAR(0.1, restored_dgrid->GetDiffusionCoefficients()[6], eps);
-  EXPECT_NEAR(0.01, restored_dgrid->GetDecayConstant(), eps);
-  EXPECT_EQ(-50, restored_dgrid->GetDimensions()[0]);
-  EXPECT_EQ(-50, restored_dgrid->GetDimensions()[2]);
-  EXPECT_EQ(-50, restored_dgrid->GetDimensions()[4]);
-  EXPECT_EQ(50, restored_dgrid->GetDimensions()[1]);
-  EXPECT_EQ(50, restored_dgrid->GetDimensions()[3]);
-  EXPECT_EQ(50, restored_dgrid->GetDimensions()[5]);
-  EXPECT_EQ(10u, restored_dgrid->GetNumBoxesArray()[0]);
-  EXPECT_EQ(10u, restored_dgrid->GetNumBoxesArray()[1]);
-  EXPECT_EQ(10u, restored_dgrid->GetNumBoxesArray()[2]);
-  EXPECT_EQ(1000u, restored_dgrid->GetNumBoxes());
-  EXPECT_EQ(10u, restored_dgrid->GetResolution());
-  EXPECT_EQ(BoundaryConditionType::kDirichlet,
-            restored_dgrid->GetBoundaryConditionType());
-  EXPECT_EQ(13.0, restored_dgrid->GetBoundaryCondition()->Evaluate(0, 0, 0, 0));
-
-  remove(ROOTFILE);
-  delete dgrid;
-}
-
-#endif  // USE_DICT
 
 Real3 GetRealCoordinates(const std::array<uint32_t, 3>& bc1,
                          const std::array<uint32_t, 3>& bc2, real_t bl) {
@@ -1576,7 +1506,7 @@ TEST(DISABLED_DiffusionTest, ModelInitializer) {
       vtk_dgrid->GetPointData()->GetArray("Substance Concentration");
   vtkDoubleArray* conc = vtkArrayDownCast<vtkDoubleArray>(abstract_array);
 
-  real_t expected = ROOT::Math::normal_pdf(0, sigma, mean);
+  real_t expected = Math::NormalPdf(0, sigma, mean);
   Real3 marker = {0, 0, 0};
   size_t idx = rm->GetDiffusionGrid(kSubstance1)->GetBoxIndex(marker);
   EXPECT_NEAR(expected, conc->GetTuple(idx)[0], 1e-9);
