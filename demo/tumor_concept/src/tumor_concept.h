@@ -27,7 +27,7 @@ namespace tumor_concept {
 // members: cell_color and can_divide
 class MyCell : public Cell {  // our object extends the Cell object
                               // create the header with our new data member
-  BDM_AGENT_HEADER(MyCell, Cell, 1);
+  BDM_AGENT_HEADER(MyCell, Cell);
 
  public:
   MyCell() {}
@@ -56,6 +56,15 @@ class MyCell : public Cell {  // our object extends the Cell object
   void SetCellColor(int cell_color) { cell_color_ = cell_color; }
   int GetCellColor() const { return cell_color_; }
 
+  bool GetVisualizationData(const std::string& name,
+                            VisualizationData* values) const override {
+    if (name == "cell_color_") {
+      *values = std::vector<int>{cell_color_};
+      return true;
+    }
+    return Base::GetVisualizationData(name, values);
+  }
+
  private:
   // declare new data member and define their type
   // private data can only be accessed by public function and not directly
@@ -65,7 +74,7 @@ class MyCell : public Cell {  // our object extends the Cell object
 
 // Define growth behaviour
 struct Growth : public Behavior {
-  BDM_BEHAVIOR_HEADER(Growth, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(Growth, Behavior);
 
   Growth() { AlwaysCopyToNew(); }
   virtual ~Growth() {}

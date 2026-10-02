@@ -25,6 +25,7 @@ namespace astrophysics {
 Real3 RotateVector(const Real3& vec, real_t th, char axis);
 
 inline int Simulate(int argc, const char** argv) {
+  constexpr real_t kSolarMassKg = 1.9884e30;
   Simulation simulation(argc, argv);
   auto* rm = simulation.GetResourceManager();
 
@@ -38,7 +39,7 @@ inline int Simulate(int argc, const char** argv) {
   // create sun
   Star* sun = new Star(109);
   sun->SetPosition({0, 0, 0});
-  sun->SetMass(1988400e+24);
+  sun->SetMass(kSolarMassKg);
   sun->AddBehavior(new Gravity);
   rm->AddAgent(sun);
 

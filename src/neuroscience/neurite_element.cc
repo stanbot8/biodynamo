@@ -15,6 +15,8 @@
 #include "neuroscience/neurite_element.h"
 #include <string>
 
+#include "core/util/log.h"
+
 namespace bdm {
 namespace neuroscience {
 
@@ -133,6 +135,27 @@ void NeuriteElement::CriticalRegion(std::vector<AgentPointer<>>* aptrs) {
 
 std::set<std::string> NeuriteElement::GetRequiredVisDataMembers() const {
   return {"mass_location_", "diameter_", "actual_length_", "spring_axis_"};
+}
+
+bool NeuriteElement::GetVisualizationData(const std::string& name,
+                                          VisualizationData* values) const {
+  if (name == "mass_location_") {
+    *values = std::vector<real_t>(mass_location_.begin(), mass_location_.end());
+    return true;
+  }
+  if (name == "actual_length_") {
+    *values = std::vector<real_t>{actual_length_};
+    return true;
+  }
+  if (name == "spring_axis_") {
+    *values = std::vector<real_t>(spring_axis_.begin(), spring_axis_.end());
+    return true;
+  }
+  if (name == "daughter_right_") {
+    *values = std::vector<uint64_t>{daughter_right_.GetUidAsUint64()};
+    return true;
+  }
+  return Base::GetVisualizationData(name, values);
 }
 
 void NeuriteElement::SetDiameter(real_t diameter) {
@@ -285,8 +308,8 @@ std::array<NeuriteElement*, 2> NeuriteElement::Bifurcate(
   // 1) physical bifurcation
   // check it is a terminal branch
   if (daughter_left_ != nullptr) {
-    Fatal("NeuriteElements",
-          "Bifurcation only allowed on a terminal neurite element");
+    Log::Fatal("NeuriteElements",
+               "Bifurcation only allowed on a terminal neurite element");
   }
   NeuriteBifurcationEvent event(length, diameter_1, diameter_2, direction_1,
                                 direction_2);
@@ -347,7 +370,7 @@ void NeuriteElement::RemoveDaughter(
     daughter_right_ = nullptr;
     return;
   }
-  Fatal("NeuriteElement", "Given object is not a daughter!");
+  Log::Fatal("NeuriteElement", "Given object is not a daughter!");
 }
 
 void NeuriteElement::UpdateRelative(const NeuronOrNeurite& old_relative,
@@ -369,7 +392,7 @@ void NeuriteElement::UpdateRelative(const NeuronOrNeurite& old_relative,
 Real3 NeuriteElement::ForceTransmittedFromDaugtherToMother(
     const NeuronOrNeurite& mother) {
   if (mother_ != &mother) {
-    Fatal("NeuriteElement", "Given object is not the mother!");
+    Log::Fatal("NeuriteElement", "Given object is not the mother!");
     return {0, 0, 0};
   }
 
@@ -903,8 +926,9 @@ void NeuriteElement::RemoveProximalNeuriteElement() {
 NeuriteElement* NeuriteElement::ExtendSideNeuriteElement(
     real_t length, real_t diameter, const Real3& direction) {
   if (daughter_right_ != nullptr) {
-    Fatal("NeuriteElement",
-          "Can't extend a side neurite since daughter_right is not a nullptr!");
+    Log::Fatal(
+        "NeuriteElement",
+        "Can't extend a side neurite since daughter_right is not a nullptr!");
   }
 
   SideNeuriteExtensionEvent event{length, diameter, direction};

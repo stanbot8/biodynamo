@@ -54,7 +54,7 @@ namespace neuroscience {
 /// Only the distal end is moved. All the forces that are applied to the
 /// proximal node are transmitted to the mother element
 class NeuriteElement : public Agent, public NeuronOrNeurite {
-  BDM_AGENT_HEADER(NeuriteElement, Agent, 1);
+  BDM_AGENT_HEADER(NeuriteElement, Agent);
 
  public:
   NeuriteElement();
@@ -74,6 +74,9 @@ class NeuriteElement : public Agent, public NeuronOrNeurite {
   /// Returns the data members that are required to visualize this simulation
   /// object.
   std::set<std::string> GetRequiredVisDataMembers() const override;
+
+  bool GetVisualizationData(const std::string& name,
+                            VisualizationData* values) const override;
 
   void SetDiameter(real_t diameter) override;
 
@@ -456,8 +459,6 @@ class NeuriteElement : public Agent, public NeuronOrNeurite {
   void Copy(const NeuriteElement& rhs);
 
  private:
-  // TODO(lukas) data members same as in cell -> resolve once ROOT-9321 has been
-  // resolved
   /// mass_location_ is distal end of the cylinder
   /// NB: Use setter and don't assign values directly
   Real3 mass_location_ = {{0.0, 0.0, 0.0}};

@@ -24,7 +24,7 @@ namespace bdm {
 /// Behavior that allows agents to sense the continuum value and stores the
 /// value in its member variable.
 struct RetrieveContinuumValue : public Behavior {
-  BDM_BEHAVIOR_HEADER(RetrieveContinuumValue, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(RetrieveContinuumValue, Behavior);
 
   RetrieveContinuumValue() {}
   virtual ~RetrieveContinuumValue() {}

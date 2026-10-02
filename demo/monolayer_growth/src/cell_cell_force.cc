@@ -17,6 +17,10 @@
 
 namespace bdm {
 
+namespace {
+constexpr real_t kCoincidentCenterTolerance = 1e-8;
+}  // namespace
+
 /// Custom force. Changed adhesive and repulsive parameters compared to standard
 /// force to achieve quick separation of mother and daughter cells after
 /// division.
@@ -52,7 +56,7 @@ Real4 CellCellForce::Calculate(const Agent* lhs, const Agent* rhs) const {
   }
   // to avoid a division by 0 if the centers are (almost) at the same
   //  location
-  if (center_distance < 0.00000001) {
+  if (center_distance < kCoincidentCenterTolerance) {
     auto* random = Simulation::GetActive()->GetRandom();
     auto force2on1 = random->template UniformArray<3>(-3.0, 3.0);
     return {force2on1[0], force2on1[1], force2on1[2], 0};

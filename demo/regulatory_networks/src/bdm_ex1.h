@@ -22,7 +22,6 @@ namespace bdm {
 
 enum Substances { kProtein };
 
-#ifndef __ROOTCLING__
 struct ODE_system {
   const std::map<std::string, DiffusionGrid*>& mdg;
   const std::vector<real_t> param;
@@ -80,8 +79,6 @@ struct ODE_output {
     std::clog << std::endl;
   }
 };
-#endif
-
 namespace ex1 {
 
 inline int Simulate(int argc, const char** argv) {
@@ -136,15 +133,12 @@ inline int Simulate(int argc, const char** argv) {
     c->SetAdherence(0.4);
     c->SetMass(1.0);
     c->SetPosition(xyz);
-#ifndef __ROOTCLING__
     c->AddBehavior(new RegulatoryNetwork(
         dt_RN, 1000, {1., 5., 7.},
         // ODE_solver::Euler,
         // ODE_solver::Rosenbrock,
         ODE_solver::RungeKutta, ODE_system(dg_map, {0.2, 0.1, 3.0}),
         ODE_jacobian(dg_map, {0.2, 0.1, 3.0}), ODE_output()));
-#endif
-
     sim.GetExecutionContext()->AddAgent(c);
   }
 

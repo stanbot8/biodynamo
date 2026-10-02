@@ -15,12 +15,11 @@
 #ifndef CORE_TYPE_INDEX_H_
 #define CORE_TYPE_INDEX_H_
 
+#include <string>
 #include <vector>
 #include "core/agent/agent.h"
 #include "core/container/agent_uid_map.h"
 #include "core/container/flatmap.h"
-
-class TClass;
 
 namespace bdm {
 
@@ -36,10 +35,10 @@ class TypeIndex {
 
   void Reserve(uint64_t capacity);
 
-  const std::vector<Agent*>& GetType(TClass* tclass) const;
+  const std::vector<Agent*>& GetType(const std::string& type_name) const;
 
  private:
-  UnorderedFlatmap<TClass*, std::vector<Agent*>> data_;
+  UnorderedFlatmap<std::string, std::vector<Agent*>> data_;
   AgentUidMap<uint64_t> index_;
 };
 

@@ -14,7 +14,6 @@
 
 #include "core/agent/agent_uid.h"
 #include <gtest/gtest.h>
-#include "unit/test_util/io_test.h"
 
 namespace bdm {
 
@@ -98,21 +97,8 @@ TEST(AgentUidTest, uint64_tOperator) {
 TEST(AgentUidTest, uint64_tOperator2) {
   AgentUid uid(123, 2);
   uint64_t idx = uid;
-  EXPECT_EQ(idx, 8589934715u);  // (2 << 32) | 123u);
+  constexpr uint64_t expected_uid = (uint64_t{2} << 32) | 123u;
+  EXPECT_EQ(idx, expected_uid);
 }
-
-#ifdef USE_DICT
-TEST_F(IOTest, AgentUid) {
-  AgentUid test{123u, 456u};
-  AgentUid* restored = nullptr;
-
-  BackupAndRestore(test, &restored);
-
-  EXPECT_EQ(restored->GetIndex(), 123u);
-  EXPECT_EQ(restored->GetReused(), 456u);
-
-  delete restored;
-}
-#endif  // USE_DICT
 
 }  // namespace bdm

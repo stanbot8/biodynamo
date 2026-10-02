@@ -165,9 +165,5 @@ TEST(CellTest, DivideVolumeRatioAxis) {
   EXPECT_NEAR(cell.captured_theta_, 0.72664234068172562, kEpsilon);
 }
 
-#ifdef USE_DICT
-TEST(CellTest, IO) { RunIOTest(); }
-#endif  // USE_DICT
-
 }  // namespace cell_test_internal
 }  // namespace bdm

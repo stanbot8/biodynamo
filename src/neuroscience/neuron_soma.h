@@ -28,7 +28,7 @@ namespace neuroscience {
 class NeuriteElement;
 
 class NeuronSoma : public Cell, public NeuronOrNeurite {
-  BDM_AGENT_HEADER(NeuronSoma, Cell, 1);
+  BDM_AGENT_HEADER(NeuronSoma, Cell);
 
  public:
   NeuronSoma();

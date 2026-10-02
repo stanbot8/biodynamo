@@ -22,7 +22,7 @@
 namespace bdm {
 
 class MyCell : public Cell {
-  BDM_AGENT_HEADER(MyCell, Cell, 1);
+  BDM_AGENT_HEADER(MyCell, Cell);
 
  public:
   MyCell() {}
@@ -42,12 +42,20 @@ class MyCell : public Cell {
   real_t GetTrail() const { return trail_; }
   void SetTrail(real_t t) { trail_ += t; }
 
+  bool GetVisualizationData(const std::string& name,
+                            VisualizationData* values) const override {
+    if (name == "trail_") {
+      *values = std::vector<real_t>{trail_};
+      return true;
+    }
+    return Base::GetVisualizationData(name, values);
+  }
+
  private:
   /// keep track of the trail of the agent
   real_t trail_;
 };
 
-#ifndef __ROOTCLING__
 struct Lorenz_rhs_ {
   void operator()(const b_vector_t& x, b_vector_t& dxdt, double t,
                   Agent* agent) const {
@@ -91,18 +99,14 @@ struct Lorenz_out_ {
     std::clog << std::endl;
   }
 };
-#endif
-
 class Trajectory : public RegulatoryNetwork {
-  BDM_BEHAVIOR_HEADER(Trajectory, RegulatoryNetwork, 1);
+  BDM_BEHAVIOR_HEADER(Trajectory, RegulatoryNetwork);
 
  public:
   Trajectory() { AlwaysCopyToNew(); }
-#ifndef __ROOTCLING__
   Trajectory(real_t dt, int n_dt, const std::vector<real_t>& x)
       : RegulatoryNetwork(dt, n_dt, x, ODE_solver::Rosenbrock, Lorenz_rhs_(),
                           Lorenz_jac_(), Lorenz_out_()) {}
-#endif
   virtual ~Trajectory() = default;
 
   void Initialize(const NewAgentEvent& event) override {
@@ -112,7 +116,6 @@ class Trajectory : public RegulatoryNetwork {
   void Run(Agent* agent) override {
     Base::Run(agent);
 
-#ifndef __ROOTCLING__
     Real3 xyz;
     for (int i = 0; i < 3; i++)
       xyz[i] = this->GetSpecie(i);
@@ -126,7 +129,6 @@ class Trajectory : public RegulatoryNetwork {
     } else {
       Log::Fatal("Trajectory::Run", "agent is not of 'MyCell' type");
     }
-#endif
   }
 };
 
@@ -164,11 +166,7 @@ inline int Simulate(int argc, const char** argv) {
     MyCell* c = new MyCell();
     c->SetDiameter(1.0);
     c->SetPosition(xyz);
-#ifndef __ROOTCLING__
     c->AddBehavior(new Trajectory(dt_RN, 222, {xyz[0], xyz[1], xyz[2]}));
-#else
-    c->AddBehavior(new Trajectory());
-#endif
 
     sim.GetExecutionContext()->AddAgent(c);
   }

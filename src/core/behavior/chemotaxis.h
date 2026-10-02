@@ -24,7 +24,7 @@ namespace bdm {
 
 /// Move cells along the diffusion gradient (from low concentration to high)
 class Chemotaxis : public Behavior {
-  BDM_BEHAVIOR_HEADER(Chemotaxis, Behavior, 1);
+  BDM_BEHAVIOR_HEADER(Chemotaxis, Behavior);
 
  public:
   Chemotaxis() = default;

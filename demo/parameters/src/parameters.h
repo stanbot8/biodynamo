@@ -24,6 +24,13 @@ struct SimParam : public ParamGroup {
 
   real_t foo = 3.14;
   int bar = -42;
+
+ protected:
+  void AssignFromConfig(
+      const std::shared_ptr<cpptoml::table>& config) override {
+    BDM_ASSIGN_CONFIG_VALUE(foo, "parameters.foo");
+    BDM_ASSIGN_CONFIG_VALUE(bar, "parameters.bar");
+  }
 };
 
 inline int Simulate(int argc, const char** argv) {
