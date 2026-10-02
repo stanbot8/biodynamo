@@ -32,7 +32,6 @@ namespace bdm {
 template <typename TBaseRm>
 class RandomizedRm : public TBaseRm {
  public:
-  explicit RandomizedRm(TRootIOCtor* r) {}
   RandomizedRm(bool auto_randomize = true);
   virtual ~RandomizedRm();
 
@@ -43,7 +42,6 @@ class RandomizedRm : public TBaseRm {
   // Automatically randomize the agent order at the end of each iteration
   // If false, you can call RandomizeAgentsOrder() manually
   bool auto_randomize_ = true;
-  BDM_CLASS_DEF_NV(RandomizedRm, 1);
 };
 
 // -----------------------------------------------------------------------------
@@ -55,19 +53,6 @@ RandomizedRm<TBaseRm>::RandomizedRm(bool auto_randomize)
 template <typename TBaseRm>
 RandomizedRm<TBaseRm>::~RandomizedRm() = default;
 
-struct Ubrng {
-  using result_type = uint32_t;
-  Random* random;
-  Ubrng(Random* random) : random(random) {}
-  static constexpr result_type min() { return 0; }
-  static constexpr result_type max() {
-    return std::numeric_limits<result_type>::max();
-  }
-  result_type operator()() {
-    return random->Integer(std::numeric_limits<result_type>::max());
-  }
-};
-
 template <typename TBaseRm>
 void RandomizedRm<TBaseRm>::RandomizeAgentsOrder() {
   // shuffle
@@ -78,8 +63,7 @@ void RandomizedRm<TBaseRm>::RandomizeAgentsOrder() {
                                    this->agents_[n].end());
 #else
     auto* random = Simulation::GetActive()->GetRandom();
-    std::shuffle(this->agents_[n].begin(), this->agents_[n].end(),
-                 Ubrng(random));
+    std::shuffle(this->agents_[n].begin(), this->agents_[n].end(), *random);
 #endif  // LINUX
   }
 

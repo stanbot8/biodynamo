@@ -17,10 +17,10 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
-
-#include <TMath.h>
 
 #include "core/container/math_array.h"
 #include "core/util/log.h"
@@ -29,13 +29,42 @@
 namespace bdm {
 
 struct Math {
-  /// value of pi
-  static constexpr real_t kPi = static_cast<real_t>(TMath::Pi());
+  // This long literal preserves pi when real_t is configured as double.
+  static constexpr real_t kPi =
+      static_cast<real_t>(3.141592653589793238462643383279502884L);
   /// Helpful constant to identify 'infinity'
-  static constexpr real_t kInfinity = 1e20;
+  static constexpr real_t kInfinity = std::numeric_limits<real_t>::infinity();
 
   static real_t ToDegree(real_t rad) { return rad * (180 / kPi); }
   static real_t ToRadian(real_t deg) { return deg * (kPi / 180); }
+
+  static real_t NormalPdf(real_t value, real_t sigma, real_t mean) {
+    if (sigma <= 0) {
+      throw std::invalid_argument("normal distribution sigma must be positive");
+    }
+    const auto normalized = (value - mean) / sigma;
+    return std::exp(-0.5 * normalized * normalized) /
+           (sigma * std::sqrt(2 * kPi));
+  }
+
+  static real_t NormalCdf(real_t value, real_t sigma, real_t mean) {
+    if (sigma <= 0) {
+      throw std::invalid_argument("normal distribution sigma must be positive");
+    }
+    return 0.5 *
+           (1 + std::erf((value - mean) / (sigma * std::sqrt(real_t{2}))));
+  }
+
+  static real_t PoissonPmf(uint64_t value, real_t mean) {
+    if (mean < 0) {
+      throw std::invalid_argument(
+          "Poisson distribution mean must be nonnegative");
+    }
+    if (mean == 0) {
+      return value == 0 ? 1 : 0;
+    }
+    return std::exp(value * std::log(mean) - mean - std::lgamma(value + 1));
+  }
 
   // Helper function that returns distance (L2 norm) between two positions in 3D
   static real_t GetL2Distance(const Real3& pos1, const Real3& pos2) {

@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "core/container/math_array.h"
-#include "unit/test_util/io_test.h"
+#include "unit/test_util/test_util.h"
 
 namespace bdm {
 
@@ -26,6 +26,18 @@ TEST(MathArray, DefaultConstructor) {
   EXPECT_NEAR(0.0, a[0], abs_error<real_t>::value);
   EXPECT_NEAR(0.0, a[1], abs_error<real_t>::value);
   EXPECT_NEAR(0.0, a[2], abs_error<real_t>::value);
+}
+
+TEST(MathArray, PartialInitializerList) {
+  MathArray<real_t, 3> values = {1, 2};
+
+  EXPECT_EQ(values[0], 1);
+  EXPECT_EQ(values[1], 2);
+  EXPECT_EQ(values[2], 0);
+}
+
+TEST(MathArray, RejectsInitializerListLargerThanCapacity) {
+  EXPECT_THROW((MathArray<int, 2>{1, 2, 3}), std::length_error);
 }
 
 TEST(MathArray, ElementAccess) {
@@ -44,6 +56,14 @@ TEST(MathArray, ElementAccess) {
     ASSERT_EQ(e, real_vector[i]);
     i++;
   }
+}
+
+TEST(MathArray, AtRejectsSize) {
+  MathArray<real_t, 3> values = {1, 2, 3};
+  EXPECT_THROW(values.at(values.size()), std::out_of_range);
+
+  const MathArray<real_t, 3> const_values = {1, 2, 3};
+  EXPECT_THROW(const_values.at(const_values.size()), std::out_of_range);
 }
 
 TEST(MathArray, Capacity) {
@@ -195,19 +215,5 @@ TEST(MathArray, NormalizeZeroVectorDeath) {
       },
       ".*You tried to normalize a zero vector..*");
 }
-
-#ifdef USE_DICT
-TEST_F(IOTest, MathArray) {
-  MathArray<real_t, 4> test{0.5, -1, 10, 500};
-  MathArray<real_t, 4>* restored = nullptr;
-
-  BackupAndRestore(test, &restored);
-  for (size_t i = 0; i < 4; ++i) {
-    ASSERT_EQ(test[i], (*restored)[i]);
-  }
-
-  delete restored;
-}
-#endif  // USE_DICT
 
 }  // namespace bdm
