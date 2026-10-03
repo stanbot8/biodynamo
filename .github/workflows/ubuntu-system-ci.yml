@@ -5,24 +5,24 @@
 name: Ubuntu System CI
 
 on:
-  schedule:
-    # Every day at 3 am
-  - cron: 0 3 * * *
+  schedule: -
+    cron: 0 3 * * *
   pull_request:
     # Upon pull requests
     branches:
     - master
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
-    github.ref }}
+    (github.event_name == 'schedule' && 'refs/heads/master' || github.ref) }}
   cancel-in-progress: ${{ github.event_name != 'schedule' && (true) }}
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
+        os:
+        - ubuntu-22.04
+        - ubuntu-24.04
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -32,7 +32,7 @@ jobs:
           echo "GHA_BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_ENV
         fi
         if [ "${{ github.event_name }}" = "schedule" ]; then
-          echo "GHA_BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "GHA_BRANCH_NAME=${ALPHA_BRIDGE_SOURCE_REF#refs/heads/}" >> $GITHUB_ENV
         fi
 
         echo "GHA_REPOSITORY=${{ github.event.pull_request.head.repo.full_name || github.repository }}" >> $GITHUB_ENV
@@ -71,6 +71,8 @@ jobs:
       with:
         fetch-depth: 0
 
+        ref: ${{ github.event_name == 'schedule' && 
+          '060d86f1078a10eb0b547d717976c96edf10e3d7' || github.sha }}
     - name: Set INSTALL_DIR
       run: |
         if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -173,6 +175,13 @@ jobs:
         run_cmake_simulation test-sim
         make run-valgrind
         make run-demos
+    env:
+      ALPHA_BRIDGE_SOURCE_SHA: ${{ github.event_name == 'schedule' && 
+        '060d86f1078a10eb0b547d717976c96edf10e3d7' || github.sha }}
+      ALPHA_BRIDGE_SOURCE_REF: ${{ github.event_name == 'schedule' && 
+        'refs/heads/master' || github.ref }}
+      ALPHA_BRIDGE_SOURCE_REF_NAME: ${{ github.event_name == 'schedule' && 
+        'master' || github.ref_name }}
     needs:
     - alpha_bridge_inputs
     if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
@@ -198,7 +207,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 060d86f1078a10eb0b547d717976c96edf10e3d7
         AB_WORKFLOW_DIGEST: 
-          16c82f81adca214d6206ef26dca3fbad776254c972a7925cba751c592c8e9a90
+          56cf7b1f8226fa52da507372b354c8e08bfc03c66ae34415203bbcfdb85be4dc
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

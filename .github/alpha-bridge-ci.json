@@ -1,17 +1,17 @@
 {
   "definition_blob_sha1": {
     ".github/workflows/alpha-bridge-ci-verify.yml": "211d78b275bbb87055d46d18edfc9b309afb7fd3",
-    ".github/workflows/build-devcontainer.yml": "71bdbc2194f37fd37e7299b66ba8b3bfe323ba45",
-    ".github/workflows/macos-system-ci.yml": "35fdd7913cd38d94bedea6376a648c4e90873a69",
-    ".github/workflows/ubuntu-system-ci.yml": "47d68e56b56c07c72c8674ef9877311882e88350"
+    ".github/workflows/build-devcontainer.yml": "4977ab343f87d9f4d4b6220758b33d412163bf15",
+    ".github/workflows/macos-system-ci.yml": "80050b0cda962eb5152609ffd9f5f22655402420",
+    ".github/workflows/ubuntu-system-ci.yml": "82822560ab81472e7327d5227547a7a8b915854e"
   },
   "definition_sha256": {
     ".github/workflows/alpha-bridge-ci-verify.yml": "4cac5461d20019fd71bd15ab6e775a433bcfc570d3cc96f9132a4bf68d15c04e",
-    ".github/workflows/build-devcontainer.yml": "edfc69edab9ebc48f5cae3f2104a5debf4b39a269c050be9553cfb4a09162998",
-    ".github/workflows/macos-system-ci.yml": "f90072766cef0c364a3c471bedaeb39f6dede122d3515f7dd693c4f7752426ab",
-    ".github/workflows/ubuntu-system-ci.yml": "db9bb4bfa0d0f1433ff27d7f39a54e48035626e37bc5e9ef2b542b965b2cf523"
+    ".github/workflows/build-devcontainer.yml": "6929f4bd24b7c3b52ec74289d42669eae002b4ffb5165a30350775d260506c31",
+    ".github/workflows/macos-system-ci.yml": "ddf89728dd769a984e6f9626c2c47587ead84a0d41a609d14e9cbff0018b4a5f",
+    ".github/workflows/ubuntu-system-ci.yml": "b67b8fbee023eafbe59ce5688cf11eba381a2f372f537e05ace0f7e9007c2851"
   },
-  "generator_sha256": "f5fbad0230ba7fa85305a317f424ab1f31bb96ff28ce023a46664fdaad8051c9",
+  "generator_sha256": "3b26cda454cba3b637212cdea3d130c69e2223d93535daef4f59e8f73b2e6cc3",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "master",
   "source_commit": "060d86f1078a10eb0b547d717976c96edf10e3d7",

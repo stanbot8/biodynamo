@@ -2,7 +2,9 @@ name: Build and push devcontainer image
 
 on:
   push:
-    branches: [main, master]
+    branches:
+    - main
+    - master
     paths:
     - .devcontainer/Dockerfile
     - .devcontainer/start-vnc.sh
@@ -26,6 +28,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+      with:
+        ref: ${{ github.event_name == 'schedule' && 
+          '060d86f1078a10eb0b547d717976c96edf10e3d7' || github.sha }}
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
@@ -50,6 +55,13 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+    env:
+      ALPHA_BRIDGE_SOURCE_SHA: ${{ github.event_name == 'schedule' && 
+        '060d86f1078a10eb0b547d717976c96edf10e3d7' || github.sha }}
+      ALPHA_BRIDGE_SOURCE_REF: ${{ github.event_name == 'schedule' && 
+        'refs/heads/master' || github.ref }}
+      ALPHA_BRIDGE_SOURCE_REF_NAME: ${{ github.event_name == 'schedule' && 
+        'master' || github.ref_name }}
     needs:
     - alpha_bridge_inputs
     if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
@@ -75,7 +87,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 060d86f1078a10eb0b547d717976c96edf10e3d7
         AB_WORKFLOW_DIGEST: 
-          9a5b98ccbad0e7eb8065924c8b4b7e935c5203005049c7f3dfc83d01383334ea
+          b747c1d76208982c572ff8798d268b611f1093c2bb45de463bc5241fd417f3ee
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

@@ -5,17 +5,15 @@
 name: macOS System CI
 
 on:
-  schedule:
-    # Every day at 3 am
-  - cron: 0 3 * * *
+  schedule: -
+    cron: 0 3 * * *
   pull_request:
     # Upon pull requests
     branches:
     - master
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
-    github.ref }}
+    (github.event_name == 'schedule' && 'refs/heads/master' || github.ref) }}
   cancel-in-progress: ${{ github.event_name != 'schedule' && (true) }}
 
 jobs:
@@ -25,7 +23,10 @@ jobs:
       # others and a macOS-version-specific problem hides the rest.
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15, macos-26]
+        os:
+        - macos-14
+        - macos-15
+        - macos-26
 
     runs-on: ${{ matrix.os }}
 
@@ -33,13 +34,13 @@ jobs:
     - name: Set GHA_BRANCH_NAME
       run: |
         if [ "${{ github.event_name }}" = "push" ]; then
-          echo "GHA_BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
+          echo "GHA_BRANCH_NAME=${ALPHA_BRIDGE_SOURCE_REF##*/}" >> $GITHUB_ENV
         fi
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           echo "GHA_BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_ENV
         fi
         if [ "${{ github.event_name }}" = "schedule" ]; then
-          echo "GHA_BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "GHA_BRANCH_NAME=${ALPHA_BRIDGE_SOURCE_REF#refs/heads/}" >> $GITHUB_ENV
         fi
 
         echo "GHA_REPOSITORY=${{ github.event.pull_request.head.repo.full_name || github.repository }}" >> $GITHUB_ENV
@@ -64,6 +65,8 @@ jobs:
       with:
         fetch-depth: 0
 
+        ref: ${{ github.event_name == 'schedule' && 
+          '060d86f1078a10eb0b547d717976c96edf10e3d7' || github.sha }}
     - name: Set INSTALL_DIR
       run: |
         if [ "${{ github.event_name }}" = "push" ]; then
@@ -117,6 +120,13 @@ jobs:
         sudo git config --system user.name "Test User"
         sudo git config --system user.email user@test.com
         make run-demos
+    env:
+      ALPHA_BRIDGE_SOURCE_SHA: ${{ github.event_name == 'schedule' && 
+        '060d86f1078a10eb0b547d717976c96edf10e3d7' || github.sha }}
+      ALPHA_BRIDGE_SOURCE_REF: ${{ github.event_name == 'schedule' && 
+        'refs/heads/master' || github.ref }}
+      ALPHA_BRIDGE_SOURCE_REF_NAME: ${{ github.event_name == 'schedule' && 
+        'master' || github.ref_name }}
     needs:
     - alpha_bridge_inputs
     if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
@@ -142,7 +152,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 060d86f1078a10eb0b547d717976c96edf10e3d7
         AB_WORKFLOW_DIGEST: 
-          cfe6090bf05bb458541816c25b25a49d5e923c8de2a5235384b18ac53ca46eb4
+          6f47f87cebf3db118dc9dbdff63948cc5c01d82a7b26eb280405ad3004febe3f
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
