@@ -5,12 +5,14 @@
 name: Ubuntu System CI
 
 on:
-  schedule: -
-    cron: 0 3 * * *
+  schedule:
+    # Every day at 3 am
+  - cron: 0 3 * * *
   pull_request:
     # Upon pull requests
     branches:
     - master
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
     ((github.event_name == 'schedule' || github.event_name == 'workflow_run') &&
@@ -22,9 +24,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os:
-        - ubuntu-22.04
-        - ubuntu-24.04
+        os: [ubuntu-22.04, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -212,7 +212,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 060d86f1078a10eb0b547d717976c96edf10e3d7
         AB_WORKFLOW_DIGEST: 
-          4a8b7d295caabae3899761dc6ff139c1b3f28895e1f5e4b15da316445456bd20
+          dba915913fd24f1388b845efa4ba161704ea83a74fabc233600bd4a66e200f05
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

@@ -5,12 +5,14 @@
 name: macOS System CI
 
 on:
-  schedule: -
-    cron: 0 3 * * *
+  schedule:
+    # Every day at 3 am
+  - cron: 0 3 * * *
   pull_request:
     # Upon pull requests
     branches:
     - master
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
     ((github.event_name == 'schedule' || github.event_name == 'workflow_run') &&
@@ -25,10 +27,7 @@ jobs:
       # others and a macOS-version-specific problem hides the rest.
       fail-fast: false
       matrix:
-        os:
-        - macos-14
-        - macos-15
-        - macos-26
+        os: [macos-14, macos-15, macos-26]
 
     runs-on: ${{ matrix.os }}
 
@@ -157,7 +156,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 060d86f1078a10eb0b547d717976c96edf10e3d7
         AB_WORKFLOW_DIGEST: 
-          42e123dbcca17dc5f815230682801d10a9f1b087de8615ca9faea6f893b4c0d3
+          6d403b7967a243b953bf977d637f347708c78710d7095f597261afd97be0ec90
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

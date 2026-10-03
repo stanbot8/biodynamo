@@ -2,9 +2,7 @@ name: Build and push devcontainer image
 
 on:
   push:
-    branches:
-    - main
-    - master
+    branches: [main, master]
     paths:
     - .devcontainer/Dockerfile
     - .devcontainer/start-vnc.sh
@@ -81,7 +79,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 060d86f1078a10eb0b547d717976c96edf10e3d7
         AB_WORKFLOW_DIGEST: 
-          c4b1201f092a78bce5bb2de20e88a7d7b2c722dd65eb34ae19e0479bf9b2507e
+          ef4fa50f4b00bbf15aaa80ec7f3f6e405583add63521f3ff974be49bb6a1d2f2
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
