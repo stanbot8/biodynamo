@@ -11,7 +11,7 @@
     ".github/workflows/macos-system-ci.yml": "4d38510e09dd611f3d21c34a53a0961ec1bcb43a74d15979b83248bfac9e0bc7",
     ".github/workflows/ubuntu-system-ci.yml": "ad9d87ab249718b52ebdb434620e6f995a8b9cb29d875721c93d9e040a2bec46"
   },
-  "generator_sha256": "34bc8c1c1eb9b2799c6a06a6f7bd056799561a0342e1ccd9d7ec69c0f000ae82",
+  "generator_sha256": "9fe7eb2612d4c4d8436e5a627541cad32d0dcba429639855b5a0a2af04b9729a",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "master",
   "source_commit": "060d86f1078a10eb0b547d717976c96edf10e3d7",
