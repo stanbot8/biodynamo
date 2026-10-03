@@ -1,17 +1,17 @@
 {
   "definition_blob_sha1": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "211d78b275bbb87055d46d18edfc9b309afb7fd3",
-    ".github/workflows/build-devcontainer.yml": "4977ab343f87d9f4d4b6220758b33d412163bf15",
-    ".github/workflows/macos-system-ci.yml": "80050b0cda962eb5152609ffd9f5f22655402420",
-    ".github/workflows/ubuntu-system-ci.yml": "82822560ab81472e7327d5227547a7a8b915854e"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "21051178fb840f31162cde1a64943007a2178f3f",
+    ".github/workflows/build-devcontainer.yml": "21c2feb127208bafe8f42d6ffff116d29a6d289c",
+    ".github/workflows/macos-system-ci.yml": "bd8c9869cf158f948c4d67d0dd975d3296665081",
+    ".github/workflows/ubuntu-system-ci.yml": "096ccdfc5f13a15fc2735148d8a87532069b185d"
   },
   "definition_sha256": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "4cac5461d20019fd71bd15ab6e775a433bcfc570d3cc96f9132a4bf68d15c04e",
-    ".github/workflows/build-devcontainer.yml": "6929f4bd24b7c3b52ec74289d42669eae002b4ffb5165a30350775d260506c31",
-    ".github/workflows/macos-system-ci.yml": "ddf89728dd769a984e6f9626c2c47587ead84a0d41a609d14e9cbff0018b4a5f",
-    ".github/workflows/ubuntu-system-ci.yml": "b67b8fbee023eafbe59ce5688cf11eba381a2f372f537e05ace0f7e9007c2851"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "f1d0d506e1faf2ef9e00102fbf464fa1a74203bf3463e623621402b9de9e8a45",
+    ".github/workflows/build-devcontainer.yml": "a8075eb74b2f9d52fb1086cd91fd8bdaae4cdfe7bab4b8d998593a107d00cbf5",
+    ".github/workflows/macos-system-ci.yml": "e61ea376b49b73efaa9bfd09d1b153357cd6b306f16d4db1a4afc7eda527d01c",
+    ".github/workflows/ubuntu-system-ci.yml": "8d2e4a5cefebffc8101c048d62970189c6c0c93cdc8a7a979019d22c5af3b6e8"
   },
-  "generator_sha256": "3b26cda454cba3b637212cdea3d130c69e2223d93535daef4f59e8f73b2e6cc3",
+  "generator_sha256": "d20fb8b8348d1a9a5c6e1057d775b208188196d5c2634d6ec392227f92b995f5",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "master",
   "source_commit": "060d86f1078a10eb0b547d717976c96edf10e3d7",
