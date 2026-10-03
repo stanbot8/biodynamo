@@ -1,0 +1,26 @@
+{
+  "definition_blob_sha1": {
+    ".github/workflows/alpha-bridge-ci-verify.yml": "0588ba302e7a97a9721ae7494f6b9aca053476b6",
+    ".github/workflows/build-devcontainer.yml": "7112e868fc9a7f5262a884c8cb91a4a6d11748d1",
+    ".github/workflows/macos-system-ci.yml": "1b6fc37c7b704639f154484b793daf5d6152b7c1",
+    ".github/workflows/ubuntu-system-ci.yml": "7915f6958137c463b75e6fc139a87413ec3c3991"
+  },
+  "definition_sha256": {
+    ".github/workflows/alpha-bridge-ci-verify.yml": "d3dacd19a9c94cd86ca5ba24b075c35f3ff224d155ca5891f3b4325ece933dac",
+    ".github/workflows/build-devcontainer.yml": "3f2c283e213c15d7497ba24310d4699d0ef607f374e1979fdafec5b50dc73ee6",
+    ".github/workflows/macos-system-ci.yml": "6dda12e8fca4cc9048946c41db7465d3807e2c2d199aef4699b1cd099b6b930f",
+    ".github/workflows/ubuntu-system-ci.yml": "e417fbf6f1a437e72400a9f3f9b8cbecdaf28b635ab627e91b7cb6d249fc3d58"
+  },
+  "generator_sha256": "f238e5d52b0ec5c07f088af203f93698fbdea22a995856dc18c50f5365431353",
+  "schema": "alpha-bridge/fork-ci",
+  "source_branch": "master",
+  "source_commit": "060d86f1078a10eb0b547d717976c96edf10e3d7",
+  "source_repository": "BioDynaMo/biodynamo",
+  "version": 1,
+  "workflows": [
+    ".github/workflows/alpha-bridge-ci-verify.yml",
+    ".github/workflows/build-devcontainer.yml",
+    ".github/workflows/macos-system-ci.yml",
+    ".github/workflows/ubuntu-system-ci.yml"
+  ]
+}
