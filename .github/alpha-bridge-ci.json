@@ -1,17 +1,27 @@
 {
   "definition_blob_sha1": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "d0cf89303388ac1271c908436e9f4bfe75bae884",
-    ".github/workflows/build-devcontainer.yml": "8de84d7e9c9263c9565155a6f56067ad65b82176",
-    ".github/workflows/macos-system-ci.yml": "2781a462a2c5cc447a7143775588eede596dc8f8",
-    ".github/workflows/ubuntu-system-ci.yml": "7fd4f1ea682a9cf7693379c79a0446f74244db64"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "d19efeb3bd029beb4c50fd874010d2b930d20715",
+    ".github/workflows/build-devcontainer.yml": "53f34bfd211a53622a3680742b45a1c037328854",
+    ".github/workflows/macos-ci.yml": "1c71490646516a163add7d2bc39a26aa86dad200",
+    ".github/workflows/macos-system-ci.yml": "a9569ad1d9b6885dc10dd41d23bacc8864ee0bd2",
+    ".github/workflows/repository-checks.yml": "c695e3c5c1cf2841582eef16965fcd1a6b184e37",
+    ".github/workflows/singularity-integration.yml": "233deaba33d96cafd56920b30867ad7bf9857034",
+    ".github/workflows/sonar-source.yml": "797e75335965e771e74d38b858d249aa048e4166",
+    ".github/workflows/ubuntu-ci.yml": "7bcf6c0832e052c8860e69e6a5de140db01d75ca",
+    ".github/workflows/ubuntu-system-ci.yml": "31aa01b63d2efd8c4b1a912a6ec58d52b4b22d06"
   },
   "definition_sha256": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "99e25329cff2a8ae245f2f99850472bdd82f571c3bc33fadfc5ac11b9f29cb7e",
-    ".github/workflows/build-devcontainer.yml": "07b4a770da22d189fdbf6a3fdd4f1afe2f4d6ae5adfb182c16e4088f67cca69c",
-    ".github/workflows/macos-system-ci.yml": "530540ed826cddb5fed709a4f8686cc40680234e38d1ef3e26e4328fdb65faaf",
-    ".github/workflows/ubuntu-system-ci.yml": "d53d0b7b4a385bff82bfb1f31d212ead1cd0bc0e4fc3b57299c0edac2c584bb5"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "8fde9e2f5e1b37bbbb22794427ac6d217d8b18bc857606edd0b072e89c58b436",
+    ".github/workflows/build-devcontainer.yml": "6f915c20a830c77b218d0c470c791e7a14d0c26f7259261bd4b243eb37f4447c",
+    ".github/workflows/macos-ci.yml": "03dad3f1a822366947dd72358686b0ee7fb83bd25cf0eee2279a44ab0d5f11d6",
+    ".github/workflows/macos-system-ci.yml": "81adb5c007ae72ca1ab7c97d04f1169c1f15c0c78e7ac2dcb13742d87b73eedd",
+    ".github/workflows/repository-checks.yml": "d64a8a00b8c82403077e48f076307fee0686e96a475b2e8badcb9f96607e09e5",
+    ".github/workflows/singularity-integration.yml": "67182a9d2e3f3e850065150c5725d394feaf72e40b844f262a6cad0737013d89",
+    ".github/workflows/sonar-source.yml": "4b4bb92e513e1e4cb34415ebf0fc5d7b72feb0267533cdb56e33dedee4f4fc1a",
+    ".github/workflows/ubuntu-ci.yml": "4aecb3e02331b36a7981e2187f66d3fd07fdc77db76f387d7e214524b7936c03",
+    ".github/workflows/ubuntu-system-ci.yml": "aecb225d786d8d3fda2b2dc3e741a3044261acf07257b090ad69bddb83573b15"
   },
-  "generator_sha256": "8bff038bcb711330ba78bf433a2923d57d4ddfeedd59b8324e44e2a59f6b0389",
+  "generator_sha256": "f9d11fba5b604bac754f7ab7e40ccde549adf8e029da2ca91ed14e9ab94c0775",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "master",
   "source_commit": "060d86f1078a10eb0b547d717976c96edf10e3d7",
@@ -20,7 +30,12 @@
   "workflows": [
     ".github/workflows/alpha-bridge-ci-verify.yml",
     ".github/workflows/build-devcontainer.yml",
+    ".github/workflows/macos-ci.yml",
     ".github/workflows/macos-system-ci.yml",
+    ".github/workflows/repository-checks.yml",
+    ".github/workflows/singularity-integration.yml",
+    ".github/workflows/sonar-source.yml",
+    ".github/workflows/ubuntu-ci.yml",
     ".github/workflows/ubuntu-system-ci.yml"
   ]
 }
