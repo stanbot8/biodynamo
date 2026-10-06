@@ -7,7 +7,7 @@ name: Ubuntu System CI
 on:
   schedule:
     # Every day at 3 am
-  - cron: 0 3 * * *
+  - cron: '0 3 * * *'
   pull_request:
     # Upon pull requests
     branches:
@@ -189,8 +189,8 @@ jobs:
         make run-demos
     needs:
     - alpha_bridge_inputs
-    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
-      }}
+    if: |-
+      ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
   alpha_bridge_inputs:
     name: CI input check
     runs-on: ubuntu-latest
@@ -216,7 +216,7 @@ jobs:
         AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
           'workflow_run') && 'refs/heads/master' || github.ref }}
         AB_WORKFLOW_DIGEST: 
-          696a0a914e3c517e02348851d8c5b6a4f8c03310570dbbf7cae675f09f8f9a93
+          83218ca0dcaee9f528e57c85314f7f5b9c66452cb2a0e5926a230bb7e4fbc39d
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

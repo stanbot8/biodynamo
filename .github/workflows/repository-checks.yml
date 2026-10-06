@@ -40,8 +40,8 @@ jobs:
         ./util/housekeeping/check-copyright.sh util/housekeeping/copyright_cpp.txt $(util/housekeeping/get-all-src-files.sh .)
     needs:
     - alpha_bridge_inputs
-    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
-      }}
+    if: |-
+      ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
   alpha_bridge_inputs:
     name: CI input check
     runs-on: ubuntu-latest
@@ -67,7 +67,7 @@ jobs:
         AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
           'workflow_run') && 'refs/heads/master' || github.ref }}
         AB_WORKFLOW_DIGEST: 
-          658db0a3081a4c337b1bdbfa764f1c28704830ec82e1ab9ae8a18509c2bfb0b2
+          e5ef019a1ca49683dd2988aaafa600993fc57b5288bbfba142d10c026fc2373c
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

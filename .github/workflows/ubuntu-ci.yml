@@ -139,8 +139,8 @@ jobs:
       if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-22.04'
     needs:
     - alpha_bridge_inputs
-    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
-      }}
+    if: |-
+      ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
   alpha_bridge_inputs:
     name: CI input check
     runs-on: ubuntu-latest
@@ -166,7 +166,7 @@ jobs:
         AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
           'workflow_run') && 'refs/heads/master' || github.ref }}
         AB_WORKFLOW_DIGEST: 
-          ea1642aa3c076181120ad88fbb372f4614659c2e4df9ce7d2e677b632ee65382
+          20ee5a7200de6132ac1bb675415cf2d881fe54fc667212d54b0644ffa3d7fbde
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
