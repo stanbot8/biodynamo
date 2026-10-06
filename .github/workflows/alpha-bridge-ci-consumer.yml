@@ -1,43 +1,18 @@
-name: repository-check
-
+name: CI input consumer
 on:
-  push:
-  pull_request:
-    branches:
-    - master
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
-    ((github.event_name == 'schedule' || github.event_name == 'workflow_run') &&
-    'refs/heads/master' || github.ref) }}
-  cancel-in-progress: ${{ (github.event_name == 'workflow_dispatch' || 
-    github.run_attempt > 1) && (true) }}
-
+  workflow_call:
+    inputs:
+      probe:
+        type: string
+        required: true
+      slot:
+        type: string
+        required: true
 jobs:
-  code-style:
-    runs-on: ubuntu-22.04
-
+  check:
+    runs-on: ubuntu-latest
     steps:
-
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install clang-format
-
-    - name: Checkout BioDynaMo
-      uses: actions/checkout@v4
-
-      with:
-        ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '060d86f1078a10eb0b547d717976c96edf10e3d7' || 
-          github.sha }}
-    - name: Run clang-format code style check
-      run: |
-        ./util/housekeeping/run-clang-format.sh $(pwd) clang-format 0 $(./util/housekeeping/get-all-src-files.sh .)
-
-    - name: Check if Copyright information is correct
-      run: |
-        ./util/housekeeping/check-copyright.sh util/housekeeping/copyright_cpp.txt $(util/housekeeping/get-all-src-files.sh .)
+    - run: echo 'Changed inputs reached consumer ${{ inputs.slot }}'
     needs:
     - alpha_bridge_inputs
     if: |-
@@ -49,7 +24,7 @@ jobs:
       actions: read
       contents: read
     concurrency:
-      group: alpha-bridge-inputs-7898dbddeb53bd47-${{ github.workflow }}-${{ 
+      group: alpha-bridge-inputs-04fbff4179fd2373-${{ github.workflow }}-${{ 
         github.sha }}-${{ github.event.schedule || github.event_name }}
       cancel-in-progress: false
       queue: max
@@ -62,13 +37,10 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         AB_REPOSITORY: ${{ github.repository }}
         AB_RUN_ID: ${{ github.run_id }}
-        AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name 
-          == 'workflow_run') && '060d86f1078a10eb0b547d717976c96edf10e3d7' || 
-          github.sha }}
-        AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && 'refs/heads/master' || github.ref }}
+        AB_HEAD_SHA: ${{ github.sha }}
+        AB_REF: ${{ github.ref }}
         AB_WORKFLOW_DIGEST: 
-          1e015dc957e30f4a26dc4df4ee9f291f600fd16fb2878064a62e49a52f99386f
+          711d6b793c7757c37d9abcfcc16387ee86b0733d88131825e8b7164981a6322a
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
